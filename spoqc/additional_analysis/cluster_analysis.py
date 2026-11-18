@@ -131,7 +131,7 @@ def celltype_cluster_analysis(
         win_res = float(res_file.readline().strip("\n"))
 
     # Pick the correct solution after you have inspected the testing plots.
-    sc.tl.leiden(rna, resolution=win_res, key_added='leiden', random_state=seed)
+    helperfuncs.leiden(rna, resolution=win_res, key_added='leiden', random_state=seed)
     timer.stop()
 
     if ( ( len(set(rna.obs['leiden'])) > 30 ) and ( not os.path.exists(res_file_name) ) ):
@@ -140,7 +140,7 @@ def celltype_cluster_analysis(
         rna.obs.drop(columns=['leiden'], inplace=True)
         res = [0.001, 0.01, 0.1]
         win_res = analysis_funcs.find_resolution_coarse_to_fine(rna, k, res)
-        sc.tl.leiden(rna, resolution=win_res, key_added='leiden', random_state=seed)
+        helperfuncs.leiden(rna, resolution=win_res, key_added='leiden', random_state=seed)
         timer.stop()
 
     ####################################################################################################################
