@@ -351,7 +351,7 @@ def start_exploration(enterprise, test_res=False):
                 enterprise.args.nthreads,
                 k=10
             )
-        sc.tl.leiden(enterprise.hqcr_set.cell_clustering_adata, resolution=1.2)
+        helperfuncs.leiden(enterprise.hqcr_set.cell_clustering_adata, resolution=1.2)
 
         # Here we combine available.
         missions.combine_priors.combine_priors_hqcr(enterprise)

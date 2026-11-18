@@ -908,6 +908,17 @@ def apply_general_plotly_layout(fig, showlegend):
     )
 
 
+def leiden(adata, **kwargs):
+    '''
+    Leiden clustering with scanpy's igraph backend.
+
+    scanpy's default backend (leidenalg) is ~100x slower on Xenium-sized data (one run on 60k cells:
+    373 s vs 3.2 s, same number of clusters). flavor="igraph" with n_iterations=2 and an undirected
+    graph is what scanpy recommends and will become its default.
+    '''
+    return sc.tl.leiden(adata, flavor="igraph", n_iterations=2, directed=False, **kwargs)
+
+
 def leiden_silhouette(adata, resolution, res_index, ninits=5):
     '''
     Returns average silhouette score and average number of clusters based on a given resolution and random state 
@@ -919,7 +930,7 @@ def leiden_silhouette(adata, resolution, res_index, ninits=5):
     adata_test = adata.copy()
 
     for rs in range(0, ninits): #since the random seed will change result - multiple samples per resolution
-        sc.tl.leiden(adata_test, resolution=resolution, key_added='temp_leiden', random_state=rs)
+        leiden(adata_test, resolution=resolution, key_added='temp_leiden', random_state=rs)
 
         if ( len(set(adata_test.obs['temp_leiden'])) > 1 ):
             scores.append(silhouette_score(adata_test.obsm['X_umap'], adata_test.obs['temp_leiden']))
