@@ -25,6 +25,11 @@ from typing import NamedTuple, Dict, List, Union, Tuple, Any, Optional, Sequence
 from anndata import AnnData
 from tqdm import tqdm
 from sklearn.metrics import silhouette_score
+
+# Silhouette scores in the resolution search are computed on a random subsample of cells. The full score
+# compares every cell with every other cell (quadratic in the number of cells); on 61k cells it took 25 s
+# per clustering and 0.6 s on 10k cells, with nearly the same value (0.319 vs 0.310-0.317).
+SILHOUETTE_SAMPLE_SIZE = 10_000
 from matplotlib.colors import to_hex
 from matplotlib.patches import Patch
 from matplotlib.lines import Line2D
@@ -933,7 +938,9 @@ def leiden_silhouette(adata, resolution, res_index, ninits=5):
         leiden(adata_test, resolution=resolution, key_added='temp_leiden', random_state=rs)
 
         if ( len(set(adata_test.obs['temp_leiden'])) > 1 ):
-            scores.append(silhouette_score(adata_test.obsm['X_umap'], adata_test.obs['temp_leiden']))
+            sample_size = SILHOUETTE_SAMPLE_SIZE if adata_test.n_obs > SILHOUETTE_SAMPLE_SIZE else None
+            scores.append(silhouette_score(adata_test.obsm['X_umap'], adata_test.obs['temp_leiden'],
+                                           sample_size=sample_size, random_state=rs))
             num_clusters.append(len(set(adata_test.obs['temp_leiden'])))
             adata_test.obs.drop(columns=['temp_leiden'], inplace=True)
         else:
