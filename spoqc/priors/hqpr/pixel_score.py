@@ -3,6 +3,7 @@ import dask.dataframe as dd
 import dask.array as da
 import pandas as pd
 import numpy as np
+from threadpoolctl import threadpool_limits
 import sys
 import os
 
@@ -196,6 +197,13 @@ def _calc_probs_pixel_score(pixel_scores, figure_path, gmm_mod=3, nstds=1, t=Non
     return norm.pdf(pixel_scores, loc=max_mean, scale=nstds*max_std)
 
 
+def _predict_single_threaded(block, est):
+    # dask already runs one block per thread. Nested BLAS/OpenMP pools in every block
+    # (threads x threads) exhaust OpenBLAS' memory regions and segfault on large nodes.
+    with threadpool_limits(limits=1):
+        return est.predict(block)
+
+
 def _dask_clustering_mini_batches(
         spoqc_tmp_folder,
         suffix,
@@ -239,7 +247,8 @@ def _dask_clustering_mini_batches(
         est.fit(sample_np)
 
         labels = dask_array.map_blocks(
-            lambda block: est.predict(block),
+            _predict_single_threaded,
+            est,
             dtype=np.int32,
             drop_axis=1,
         )
