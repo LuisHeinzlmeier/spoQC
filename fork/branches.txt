@@ -8,3 +8,4 @@ perf/ac-gene-lookup             # perf | not checked | not sent | HQTR AC: one l
 perf/leiden-igraph-backend      # perf | not checked | not sent | Leiden via scanpy's igraph backend (approximate)
 perf/silhouette-sampling        # perf | not checked | not sent | silhouette on 10k sampled cells in the resolution search (approximate)
 perf/lbp-unary-cache            # perf | exact | not sent | Cache fixed unary costs in the refinement scratch memmap
+perf/drop-pixel-parquet-index    # perf | exact | not sent | Drop the transport index from raw and refined pixel masks
