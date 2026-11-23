@@ -1,3 +1,5 @@
+import warnings
+
 import spatialdata as sd
 import numpy as np
 import pandas as pd
@@ -7,7 +9,7 @@ import concurrent.futures
 import scipy.sparse as sp
 import concurrent.futures
 
-from libpysal.weights import KNN
+from libpysal.cg import KDTree
 from scipy.spatial import cKDTree
 from scipy.ndimage import convolve
 
@@ -15,20 +17,15 @@ from ... import helperfuncs
 from ... import core
 
 # Vectorized Moran-I for all genes in a neighborhood
-def _moran_I_all_genes(X_dense: np.ndarray, w) -> np.ndarray:
+def _moran_I_all_genes(X_dense: np.ndarray, weights: sp.csr_matrix) -> np.ndarray:
     """
     X_dense: (n, num_genes) float array for selected cells
-    w: libpysal weights object
+    weights: row-standardized sparse spatial weights
     returns: (num_genes,) Moran's I per gene
     """
     n = X_dense.shape[0]
     if n < 3:
         return np.full((X_dense.shape[1],), -1.0, dtype=np.float32)
-
-    # ensure sparse CSR for W
-    # NOTE: w.sparse is typically CSR; w.transform='r' row-standardizes
-    w.transform = "r"
-    weights = w.sparse  # scipy sparse
 
     # S0 for row-standardized weights is just sum(W)
     row_standardized_weights = weights.sum()
@@ -51,11 +48,28 @@ def _moran_I_all_genes(X_dense: np.ndarray, w) -> np.ndarray:
     return out
 
 # Choose a fast weights builder for points
-def _build_weights(coords_subset: np.ndarray, k):
-    # fixed K neighbors
-    # Take Minimum of k (30) cells if there are that many cells.
-    w = KNN.from_array(coords_subset, k=k)  # tune k
-    return w
+def _build_weights(coords_subset: np.ndarray, k: int) -> sp.csr_matrix:
+    tree = KDTree(coords_subset)
+    n = tree.n
+    _, candidates = tree.query(tree.data, k=k + 1)
+
+    # Match KNN's self and tie handling. With enough coincident points, the
+    # query can omit self, so discard the last candidate in that case.
+    keep = candidates != np.arange(n)[:, None]
+    keep[keep.all(axis=1), -1] = False
+    neighbors = np.sort(candidates[keep].reshape(n, k), axis=1)
+
+    weights = sp.csr_matrix(
+        (np.full(n * k, 1.0 / k), neighbors.ravel(), np.arange(n + 1) * k),
+        shape=(n, n),
+    )
+    components = sp.csgraph.connected_components(weights, return_labels=False)
+    if components > 1:
+        warnings.warn(
+            f"The weights matrix is not fully connected: \n There are {components} disconnected components.",
+            stacklevel=2,
+        )
+    return weights
 
 # Core computation per i (no sdata['table'] slicing, no GeoPandas)
 # This calculate all Moran'Is for all genes for one cell.
@@ -73,8 +87,8 @@ def _compute_one_i(i: int, num_genes, distance_matrix, center_cell_ids, coords_a
     # If rna_X is sparse: this makes a dense (m, num_genes) only for the neighborhood (cheap-ish).
     X_sub = rna_X[idx, :].toarray() if sp.issparse(rna_X) else np.asarray(rna_X[idx, :])
 
-    w = _build_weights(coords, k)
-    I_all = _moran_I_all_genes(X_sub, w)
+    weights = _build_weights(coords, k)
+    I_all = _moran_I_all_genes(X_sub, weights)
     return center_cell_id, I_all
 
 
