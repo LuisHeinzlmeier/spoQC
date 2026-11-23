@@ -158,7 +158,7 @@ def first_version_loopy_belief_propagation_parallel(
     # -----------------------
     # Zarr store setup (float32)
     # -----------------------
-    compressor = BloscCodec(cname="zstd", clevel=5, shuffle="shuffle")
+    compressor = BloscCodec(cname="zstd", clevel=1, shuffle="shuffle")
     store = zarr.storage.LocalStore(f"{spoqc_tmp_folder}/lbp_store_{modality}_zarr")
     root = zarr.group(store=store, overwrite=True)
 
