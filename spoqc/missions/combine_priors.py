@@ -48,7 +48,10 @@ def combine_priors_hqpr(enterprise):
     print("[NOTE] Writing out data")
     timer = helperfuncs.Timer()
     timer.start()
-    helperfuncs.ddf_to_parquet(enterprise.hqpr_priorset.prior_ddf, 'mask_raw', enterprise.args.tmp_dir, [], tmp_suffix)
+    helperfuncs.ddf_to_parquet(
+        enterprise.hqpr_priorset.prior_ddf, 'mask_raw', enterprise.args.tmp_dir, [], tmp_suffix,
+        include_index=False,
+    )
     timer.stop()
 
     return enterprise.hqpr_priorset.prior_ddf
@@ -86,7 +89,10 @@ def combine_priors_hqtr(enterprise):
     print("[NOTE] Writing out data")
     timer = helperfuncs.Timer()
     timer.start()
-    helperfuncs.ddf_to_parquet(enterprise.hqtr_priorset.prior_ddf, 'mask_raw', enterprise.args.tmp_dir, [], tmp_suffix)
+    helperfuncs.ddf_to_parquet(
+        enterprise.hqtr_priorset.prior_ddf, 'mask_raw', enterprise.args.tmp_dir, [], tmp_suffix,
+        include_index=False,
+    )
     timer.stop()
 
     return enterprise.hqtr_priorset.prior_ddf
