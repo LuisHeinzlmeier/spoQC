@@ -1,0 +1,9 @@
+# Change branches merged into integration/fast-qc, in this order (one per line).
+# Format: <branch>  # <kind: fix|perf> | <equivalence: exact|approximate|not checked> | <upstream PR or "not sent"> | <note>
+# Lines starting with # are ignored. Remove a branch once upstream has merged it.
+
+fix/blas-thread-limit           # fix  | not checked | not sent | cap BLAS threads; single-threaded k-means predict inside dask (fixes exit 139 on 256-core nodes)
+fix/annotation-numeric-labels   # fix  | not checked | not sent | read cluster ids as text (Xenium graphclust ids are integers)
+perf/ac-gene-lookup             # perf | not checked | not sent | HQTR AC: one lookup instead of a per-gene loop (expected exact)
+perf/leiden-igraph-backend      # perf | not checked | not sent | Leiden via scanpy's igraph backend (approximate)
+perf/silhouette-sampling        # perf | not checked | not sent | silhouette on 10k sampled cells in the resolution search (approximate)
