@@ -1155,6 +1155,19 @@ def read_sdata_parquet_tmp_files(sdata, spoqc_tmp_folder, suffix):
         return None
 
 
+def grouped_pixels_to_image(values, imagedim, shape, *, dtype):
+    """Place per-pixel aggregates into a zero-filled image in row-major order."""
+    x_min, x_max = int(imagedim.bb_xmin), int(imagedim.bb_xmax)
+    y_min, y_max = int(imagedim.bb_ymin), int(imagedim.bb_ymax)
+    x = values.index.get_level_values("x").to_numpy()
+    y = values.index.get_level_values("y").to_numpy()
+    inside = (x >= x_min) & (x < x_max) & (y >= y_min) & (y < y_max)
+
+    image = np.zeros((len(range(y_min, y_max)), len(range(x_min, x_max))), dtype=dtype)
+    image[y[inside] - y_min, x[inside] - x_min] = values.fillna(0).to_numpy(dtype=dtype)[inside]
+    return image.reshape(shape)
+
+
 def nparr_to_parquet(np_arr, prefix, spoqc_tmp_folder, suffix):
     outfile = f"{spoqc_tmp_folder}/{prefix}_output_{suffix}.parquet"
     table = pa.Table.from_arrays([pa.array(np_arr)], names=[prefix])

@@ -275,20 +275,10 @@ def _generate_transcript_ambient_density_image(
         .rename("morans_I")
     )
 
-    x_idx = range(int(imagedim.bb_xmin), int(imagedim.bb_xmax))
-    y_idx = range(int(imagedim.bb_ymin), int(imagedim.bb_ymax))
-    grid = [(x, y) for y in y_idx for x in x_idx]
-    grid_mi = pd.MultiIndex.from_tuples(grid, names=["x", "y"])
-
-    transcript_density_list = (
-        gm.reindex(grid_mi)     # align to the full grid
-        .fillna(0.0)
-        .to_numpy()
-        .astype("float64")
+    xy_transcript_density = helperfuncs.grouped_pixels_to_image(
+        gm, imagedim, (dim_x, dim_y), dtype=np.float64,
     )
     timer.stop()
-
-    xy_transcript_density = np.array(transcript_density_list).reshape(dim_x, dim_y)
 
     # Create circular kernel (disk mask)
     y, x = np.ogrid[-kernel_radius:kernel_radius+1, -kernel_radius:kernel_radius+1]
@@ -320,15 +310,10 @@ def _generate_transcript_ambient_density_image(
         .rename("local_moran_I")
     )
 
-    local_transcript_density_list = (
-        gm.reindex(grid_mi)     # align to the full grid
-        .fillna(0.0)
-        .to_numpy()
-        .astype("float64")
+    local_xy_transcript_density = helperfuncs.grouped_pixels_to_image(
+        gm, imagedim, (dim_x, dim_y), dtype=np.float64,
     )
     timer.stop()
-
-    local_xy_transcript_density = np.array(local_transcript_density_list).reshape(dim_x, dim_y)
 
     # Create circular kernel (disk mask)
     kernel = mask.astype(local_xy_transcript_density.dtype)
