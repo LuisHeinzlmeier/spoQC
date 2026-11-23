@@ -25,7 +25,7 @@ def _generate_transcript_quality_density_image(
     transcript_coords_df = sd.get_centroids(sdata['transcripts'], coordinate_system='global').compute()
     transcript_coords_df = transcript_coords_df.astype(int)
     xy_transcript_coords_df = transcript_coords_df.loc[:,['x','y']]
-    xy_transcript_coords_df['qv'] = sdata['transcripts'].compute()['qv']
+    xy_transcript_coords_df['qv'] = sdata['transcripts']['qv'].compute()
 
     print("[NOTE] Calcualte pixel mean")
     timer.start()
