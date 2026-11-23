@@ -198,14 +198,15 @@ def first_version_loopy_belief_propagation_parallel(
     )
 
     # -----------------------
-    # Messages via memmap (fast, uncompressed)
-    # shape: (4, n+2, m+2, 2) with padding like original
+    # Four padded message planes and one cache for the fixed unary costs.
+    # The cache avoids decompressing the same Zarr chunks in every sweep.
     # -----------------------
     mm_path = os.path.join(spoqc_tmp_folder, f"lbp_messages_{modality}.mmap")
     messages = np.memmap(mm_path, mode="w+", dtype=np.float32,
-                         shape=(4, n_pad, m_pad, 2))
+                         shape=(5, n_pad, m_pad, 2))
     try:
-        messages[:] = 0.0
+        unary_cache = messages[4, :n, :m, :]
+        messages[:4] = 0.0
 
         # -----------------------
         # Initialize unary in tiles (Numba kernel)
@@ -221,6 +222,7 @@ def first_version_loopy_belief_propagation_parallel(
 
                 compute_unary_tile_numba(p, eps, u)
                 unary[i0:i1, j0:j1, :] = u
+                unary_cache[i0:i1, j0:j1, :] = u
 
         # Normalize mode for Numba (avoid strings in kernels)
         if normalize == "min":
@@ -258,7 +260,7 @@ def first_version_loopy_belief_propagation_parallel(
                         left_ = messages[3, i0+1: i1+1, j0:   j1,   :]
                         right_= messages[2, i0+1: i1+1, j0+2: j1+2, :]
 
-                        u = unary[i0:i1, j0:j1, :]  # (Ti, Tj, 2)
+                        u = unary_cache[i0:i1, j0:j1, :]  # (Ti, Tj, 2)
 
                         # Target slice for this direction update
                         cur  = messages[direction_idx, i0+1:i1+1, j0+1:j1+1, :]  # (Ti, Tj, 2)
@@ -311,7 +313,7 @@ def first_version_loopy_belief_propagation_parallel(
                 left_ = messages[3, i0+1: i1+1, j0:   j1,   :]
                 right_= messages[2, i0+1: i1+1, j0+2: j1+2, :]
 
-                u = unary[i0:i1, j0:j1, :]
+                u = unary_cache[i0:i1, j0:j1, :]
 
                 b = np.empty_like(u)
                 lab = np.empty((i1 - i0, j1 - j0), dtype=np.int8)
@@ -326,7 +328,7 @@ def first_version_loopy_belief_propagation_parallel(
         # beliefs[:,:,0] is prob for good quality
         return beliefs[:,:,0], labels
     finally:
-        # The messages memmap is ~32 B/pixel (tens of GB for whole slides) and only needed during LBP.
+        # This scratch memmap is ~40 B/pixel and only needed during LBP.
         # Drop our reference and delete the file (on Linux the space is freed once the last view is gone).
         del messages
         if os.path.exists(mm_path):
