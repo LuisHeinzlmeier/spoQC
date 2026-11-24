@@ -25,41 +25,15 @@ def _is_convex(polygon: List[Tuple[float, float]]) -> Tuple[bool, float]:
     if n < 3:
         raise ValueError("A polygon must have at least three vertices.")
     
-    cross_products = []
-    for i in range(n):
-        # Get three consecutive points
-        p1 = np.array(polygon[i])
-        p2 = np.array(polygon[(i + 1) % n])
-        p3 = np.array(polygon[(i + 2) % n])
-        
-        # Compute vectors
-        v1 = p2 - p1
-        v2 = p3 - p2
-        
-        # Compute the cross product of vectors
-        cross_product = np.cross(v1, v2)
-        cross_products.append(cross_product)
-    
-    # Check if all cross products have the same sign
-    all_positive = all(cp > 0 for cp in cross_products)
-    all_negative = all(cp < 0 for cp in cross_products)
-    
-    is_polygon_convex = all_positive or all_negative
+    coordinates = np.asarray(polygon)
+    edges = np.roll(coordinates, -1, axis=0) - coordinates
+    next_edges = np.roll(edges, -1, axis=0)
+    cross_products = edges[:, 0] * next_edges[:, 1] - edges[:, 1] * next_edges[:, 0]
 
-    # Measure convexity as the ratio of consistent angles
-    neg = 0
-    pos = 0
-    if all_positive or all_negative:
-        pos = sum(cp != 0 for cp in cross_products)
-    else:
-        # Sum up the boolean vectore (i.e., sum up all Ture)
-        neg = sum(cp < 0 for cp in cross_products)
-        pos = sum(cp > 0 for cp in cross_products)
-
-    # Just take the maximum amount of consistent angles
-    convexity_metric = np.max([neg,pos]) / len(cross_products)
-    
-    return is_polygon_convex, convexity_metric
+    positive = np.count_nonzero(cross_products > 0)
+    negative = np.count_nonzero(cross_products < 0)
+    consistent = max(positive, negative)
+    return consistent == n, consistent / n
 
 
 # Function to assign nulcei to cell
