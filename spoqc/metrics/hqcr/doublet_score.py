@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
 import numpy as np
+import os
 
 from ... import helperfuncs
 from ... import core
@@ -72,8 +73,10 @@ def _calc_doublet_score(
         distance_thresh = 10,
 ):
 
-    transcript_coordinates_df = sdata.points[key_transcripts].compute()
-    transcript_coordinates_df = transcript_coordinates_df.rename(columns={'feature_name': 'gene'})
+    transcript_coordinates_df = sdata.points[key_transcripts][
+        ['x', 'y', 'z', 'feature_name']
+    ].compute()
+    transcript_coordinates_df.rename(columns={'feature_name': 'gene'}, inplace=True)
 
     # ovrlpy does a werid thing to overwrite the coordinates and set the origin to 0.0.
     # I bring the doublet coordinates into the original data points coord system.
@@ -89,11 +92,17 @@ def _calc_doublet_score(
     if ( sdata['table'].n_obs < 100 ):
         n_components = 2
 
+    # The pipeline can pass a smaller legacy thread count than Slurm allocated.
+    allocated_cpus = os.environ.get("SLURM_CPUS_PER_TASK", "")
+    workers = int(allocated_cpus) if allocated_cpus.isdecimal() else threads
+    workers = workers if workers > 0 else threads
+    print(f"[NOTE] DoubletQC ovrlpy workers: {workers}")
+
     ovrlp = ovrlpy.Ovrlp(
         transcript_coordinates_df,
         min_distance=cell_diameter,
         n_components=n_components,
-        n_workers=threads,
+        n_workers=workers,
     )
     ovrlp.analyse()
 
@@ -267,9 +276,7 @@ def _calc_doublet_score(
         sdata['table'].obs['doublet_ddd'] = np.zeros(sdata['table'].n_obs)
 
 
-    # Have to call this again because overlpy corrects also the transcript coordinates
-    transcript_coordinates_df = sdata.points[key_transcripts].compute()
-
+    # Ovrlp adjusts its own Polars table. The original coordinates and index are still here.
     transcript_doublet = _transcripts_near_doublets(
         transcript_coordinates_df, corrected_doublet_df, distance_thresh,
     )
