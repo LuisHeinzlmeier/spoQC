@@ -1,12 +1,11 @@
 
 # In[]
-import os
-
 import ovrlpy
 import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
 import numpy as np
+import os
 
 from ... import helperfuncs
 from ... import core
