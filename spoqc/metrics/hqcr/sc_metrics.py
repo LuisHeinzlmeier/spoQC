@@ -101,12 +101,14 @@ def _calc_sc_metrics(sdata, figure_path, annotation_path, annotation_key):
     rna.var['log_n_cells_by_counts'] = np.log10(rna.var['n_cells_by_counts'] + 1)
 
     # The next QC stages also use NumPy's shared random state.
-    scatter_sample = np.arange(rna.n_obs) < 10_000
+    n_cells = min(rna.n_obs, 10_000)
+    scatter_sample = np.arange(rna.n_obs) < n_cells
     np.random.shuffle(scatter_sample)
 
     if not plots_enabled():
         for level in ["total_counts", "transcript_counts", "n_genes_by_counts", "cell_area", "nucleus_area"]:
             rna.obs[f"log_{level}"] = np.log10(rna.obs[level] + 1)
+        general.normalizations.cell_area_normalization(sdata)
         return
 
     print("[TASK] Generate QC plots RNA")
