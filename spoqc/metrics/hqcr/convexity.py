@@ -1,3 +1,4 @@
+from shapely import STRtree
 import numpy as np
 import plotly.express as px
 import geopandas as gpd
@@ -65,11 +66,13 @@ def _find_overlapping_nuclei(cells: gpd.GeoDataFrame, nucleus: gpd.GeoDataFrame)
     print("[NOTE] Find overlapping nuceli for cells")
     timer = helperfuncs.Timer()
     timer.start()
+    tree = STRtree(nucleus.geometry.centroid.to_numpy())
+    nucleus_index = nucleus.index
     overlaps = []
-    nucleus_centroids = nucleus.geometry.centroid
     for cell in cells.geometry:
-        overlapping_indices = nucleus[nucleus_centroids.geometry.intersects(cell)].index.tolist()
-        overlaps.append(overlapping_indices)
+        # Query results are positions in the nucleus frame. Restore its row order.
+        positions = np.sort(tree.query(cell, predicate="intersects"))
+        overlaps.append(nucleus_index.take(positions).tolist())
     timer.stop()
     return overlaps
 
