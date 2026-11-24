@@ -161,21 +161,20 @@ def compute_pixel_sample(array):
 def checkpoint_pixel_scores(frame, directory):
     """Cache one Parquet file per partition for the current SpoQC process."""
     checkpoint = TemporaryDirectory(prefix=".pixel-scores-", dir=directory)
-    path = checkpoint.name
+    paths = [
+        os.path.join(checkpoint.name, f"part.{i:08d}.parquet")
+        for i in range(frame.npartitions)
+    ]
     try:
         writes = (
-            dask.delayed(pd.DataFrame.to_parquet)(
-                part, os.path.join(path, f"part.{i:08d}.parquet"), index=True,
-            )
-            for i, part in enumerate(frame.to_delayed())
+            dask.delayed(pd.DataFrame.to_parquet)(part, path, index=True)
+            for part, path in zip(frame.to_delayed(), paths, strict=True)
         )
         for batch in batched(writes, 16):
             dask.compute(*batch, num_workers=4)
-        cached = dd.read_parquet(
-            path, calculate_divisions=True, split_row_groups=False, aggregate_files=False,
+        cached = dd.from_map(
+            pd.read_parquet, paths, meta=frame._meta, divisions=frame.divisions,
         )
-        if cached.divisions != frame.divisions:
-            raise ValueError("Pixel-score checkpoint did not preserve partition divisions")
     except BaseException:
         checkpoint.cleanup()
         raise
