@@ -577,8 +577,9 @@ def _calc_void(
             else:
                 print("[WARN] spoQC couldnt define any triangle and thus no plots are given for void QC.")
 
+        timer.stop()
+
     print("[NOTE] Void QC done!")
-    timer.stop()
 
 
 def init_metric(enterprise):
