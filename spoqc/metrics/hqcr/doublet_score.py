@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
 import numpy as np
+import os
 
 from ... import helperfuncs
 from ... import core
@@ -50,11 +51,17 @@ def _calc_doublet_score(
     if ( sdata['table'].n_obs < 100 ):
         n_components = 2
 
+    # The pipeline can pass a smaller legacy thread count than Slurm allocated.
+    allocated_cpus = os.environ.get("SLURM_CPUS_PER_TASK", "")
+    workers = int(allocated_cpus) if allocated_cpus.isdecimal() else threads
+    workers = workers if workers > 0 else threads
+    print(f"[NOTE] DoubletQC ovrlpy workers: {workers}")
+
     ovrlp = ovrlpy.Ovrlp(
         transcript_coordinates_df,
         min_distance=cell_diameter,
         n_components=n_components,
-        n_workers=threads,
+        n_workers=workers,
     )
     ovrlp.analyse()
 
