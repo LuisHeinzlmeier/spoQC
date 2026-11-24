@@ -1,5 +1,7 @@
 
 # In[]
+from spoqc.reporting import plots_only
+
 import numpy as np
 import time
 import matplotlib.pyplot as plt
@@ -248,6 +250,7 @@ def first_version_loopy_belief_propagation(
     return labels
 
 
+@plots_only
 def visualize_markov_calculation(average_cell_probability_image, labels, figure_path):
     plt.figure(figsize=(30, 5))
     plt.subplot(1, 3, 1)

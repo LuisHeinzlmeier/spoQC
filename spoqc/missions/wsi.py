@@ -1,3 +1,5 @@
+from spoqc.reporting import plots_only
+
 import cv2  # -> opencv-python
 import numpy as np
 import matplotlib.pyplot as plt
@@ -138,6 +140,7 @@ def _generate_input(sdata, figure_path, image_type):
     plt.close()
 
 
+@plots_only
 def start_exploration(enterprise):
     if enterprise.args.step in ["all", "whole_slide_qc"]:
         print('[NOTE] Domain QC')

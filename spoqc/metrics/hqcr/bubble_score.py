@@ -1,3 +1,5 @@
+from spoqc.reporting import plots_enabled
+
 import pandas as pd
 import numpy as np
 import plotly.express as px
@@ -58,42 +60,43 @@ def _calc_bubble_score(sdata: Dict[str, Any], figure_path: str, bubble_key: str)
         circumference = cellboundaries.iloc[i][0].length
         thinness_scores[i] = ( 4*np.pi*areas[i] ) / ((circumference) ** 2)
 
-    df = pd.DataFrame({
-        'thinness_score': thinness_scores,
-        'log10_thinness_score': [np.log10(x) for x in thinness_scores],
-        'cell_areas': areas,
-        'log10_cell_areas': [np.log10(x) for x in areas]
-    })
+    if plots_enabled():
+        df = pd.DataFrame({
+            'thinness_score': thinness_scores,
+            'log10_thinness_score': [np.log10(x) for x in thinness_scores],
+            'cell_areas': areas,
+            'log10_cell_areas': [np.log10(x) for x in areas]
+        })
 
-    figures = []
+        figures = []
 
-    fig = px.histogram(df, x='log10_thinness_score', nbins=100, width=800, height=800)
+        fig = px.histogram(df, x='log10_thinness_score', nbins=100, width=800, height=800)
     
-    fig.update_layout(
-        title=f"Total distribution of log10_thinness_score for all samples"
-    )
+        fig.update_layout(
+            title=f"Total distribution of log10_thinness_score for all samples"
+        )
 
-    helperfuncs.apply_general_plotly_layout(fig, True)
+        helperfuncs.apply_general_plotly_layout(fig, True)
     
-    figures.append(fig)
-    fig.write_image(f'{figure_path}/histogram_log10_thinness_score.png', scale=int(DPI/100))
-    fig.write_image(f'{figure_path}/histogram_log10_thinness_score.pdf', scale=int(DPI/100))
+        figures.append(fig)
+        fig.write_image(f'{figure_path}/histogram_log10_thinness_score.png', scale=int(DPI/100))
+        fig.write_image(f'{figure_path}/histogram_log10_thinness_score.pdf', scale=int(DPI/100))
 
-    fig = px.violin(df, x='log10_cell_areas', width=800, height=800)
+        fig = px.violin(df, x='log10_cell_areas', width=800, height=800)
     
-    fig.update_layout(
-        title=f"Cell area"
-    ) 
+        fig.update_layout(
+            title=f"Cell area"
+        )
 
-    helperfuncs.apply_general_plotly_layout(fig, True)
+        helperfuncs.apply_general_plotly_layout(fig, True)
 
-    figures.append(fig)
-    fig.write_image(f'{figure_path}/violinplot_log10_cell_areas.png', scale=int(DPI/100))
-    fig.write_image(f'{figure_path}/violinplot_log10_cell_areas.pdf', scale=int(DPI/100))
+        figures.append(fig)
+        fig.write_image(f'{figure_path}/violinplot_log10_cell_areas.png', scale=int(DPI/100))
+        fig.write_image(f'{figure_path}/violinplot_log10_cell_areas.pdf', scale=int(DPI/100))
 
-    with open(f'{figure_path}/bubble.html', 'w') as f:
-        for fig in figures:
-            f.write(fig.to_html(full_html=False, include_plotlyjs='cdn'))
+        with open(f'{figure_path}/bubble.html', 'w') as f:
+            for fig in figures:
+                f.write(fig.to_html(full_html=False, include_plotlyjs='cdn'))
 
     quartiles = np.quantile(areas, q=[.25, .5, .75, .9])
 

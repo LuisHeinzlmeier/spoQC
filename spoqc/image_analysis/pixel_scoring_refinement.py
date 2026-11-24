@@ -1,5 +1,7 @@
 
 # In[]
+from spoqc.reporting import plots_enabled
+
 import dask.dataframe as dd
 import pandas as pd
 
@@ -46,11 +48,12 @@ def start_pixel_mask_refinement(
         normalize='total'
     )
 
-    hqr.markov_random_field_zarr_parallel.visualize_markov_calculation(
-        beliefs_raw.reshape((dim_x, dim_y)),
-        labels[:],
-        figure_path
-    )
+    if plots_enabled():
+        hqr.markov_random_field_zarr_parallel.visualize_markov_calculation(
+            beliefs_raw.reshape((dim_x, dim_y)),
+            labels[:],
+            figure_path
+        )
 
     #  Write out masks.
     print(f"[NOTE] Write out {suffix} masks")

@@ -1,3 +1,5 @@
+from spoqc.reporting import plots_enabled
+
 from skimage.feature import local_binary_pattern
 
 from ... import helperfuncs
@@ -26,16 +28,17 @@ def pixel_lbp(figure_path, xy_intensities, imagedim, n_points=100, radius=3):
 
     print("[NOTE] Plotting")
     timer.start()
-    helperfuncs.plot_pixels(
-        figure_path,
-        lbp_image,
-        imagedim,
-        'lbp', 
-        'Local Binary Pattern (LBP)', 
-        'hot',
-        False,
-        False
-    )
+    if plots_enabled():
+        helperfuncs.plot_pixels(
+            figure_path,
+            lbp_image,
+            imagedim,
+            'lbp',
+            'Local Binary Pattern (LBP)',
+            'hot',
+            False,
+            False
+        )
     timer.stop()
 
     return lbp_image.flatten()

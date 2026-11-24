@@ -1,3 +1,5 @@
+from spoqc.reporting import plots_enabled
+
 import spatialdata as sd
 import numpy as np
 import pandas as pd
@@ -299,16 +301,17 @@ def _generate_transcript_ambient_density_image(
     # xy_kernel_transcript_density = xy_kernel_transcript_density.astype(np.uint16) # conversion needed for cv2
 
     if ( figure_path != None ):
-        helperfuncs.plot_pixels(
-            figure_path,
-            np.log10(xy_kernel_transcript_density + 1),
-            imagedim,
-            'transcript_global_autocorrelation_density',
-            'Transcript Global Autocorrelation Density (Potential)', 
-            'gray',
-            True,
-            True
-        )
+        if plots_enabled():
+            helperfuncs.plot_pixels(
+                figure_path,
+                np.log10(xy_kernel_transcript_density + 1),
+                imagedim,
+                'transcript_global_autocorrelation_density',
+                'Transcript Global Autocorrelation Density (Potential)',
+                'gray',
+                True,
+                True
+            )
 
     # Second calculate the ambient value (local Moran's I) ----------------------------------
     print("[NOTE] Calcualte pixel max")
@@ -336,16 +339,17 @@ def _generate_transcript_ambient_density_image(
     local_xy_kernel_transcript_density = np.flipud(local_xy_kernel_transcript_density)
 
     if ( figure_path != None ):
-        helperfuncs.plot_pixels(
-            figure_path,
-            np.log10(local_xy_kernel_transcript_density + 1),
-            imagedim,
-            'transcript_local_autocorrelation_density',
-            'Transcript Local Autocorrelation Density (Value)', 
-            'gray',
-            True,
-            True
-        )
+        if plots_enabled():
+            helperfuncs.plot_pixels(
+                figure_path,
+                np.log10(local_xy_kernel_transcript_density + 1),
+                imagedim,
+                'transcript_local_autocorrelation_density',
+                'Transcript Local Autocorrelation Density (Value)',
+                'gray',
+                True,
+                True
+            )
 
     # Now we combine both ambient potential with ambient value ---------------------------------
     # combined = -1     ---> -1 * 1 or 1 * -1 = disagreement, direction between global and local
@@ -354,16 +358,17 @@ def _generate_transcript_ambient_density_image(
     xy_kernel_ac_density = np.abs(local_xy_kernel_transcript_density * xy_kernel_transcript_density)
 
     if ( figure_path != None ):
-        helperfuncs.plot_pixels(
-            figure_path,
-            np.log10(xy_kernel_ac_density + 1),
-            imagedim,
-            'transcript_autocorrelation_density',
-            'Transcript Autocorrelation Density (Combined)', 
-            'gray',
-            True,
-            True
-        )
+        if plots_enabled():
+            helperfuncs.plot_pixels(
+                figure_path,
+                np.log10(xy_kernel_ac_density + 1),
+                imagedim,
+                'transcript_autocorrelation_density',
+                'Transcript Autocorrelation Density (Combined)',
+                'gray',
+                True,
+                True
+            )
 
     return xy_kernel_ac_density.flatten()
 
@@ -396,13 +401,14 @@ def _transcript_ac_image(
 
     print("[NOTE] Generate ac histogram")
     timer.start()
-    helperfuncs.plot_histogram_for_array(
-        image_ddf[image_ddf['ac_density'] > 0]['ac_density'].compute().to_numpy(),
-        100,
-        figure_path,
-        "Transcript autocorrelation density historgram",
-        "transcript_ac"
-    )
+    if plots_enabled():
+        helperfuncs.plot_histogram_for_array(
+            image_ddf[image_ddf['ac_density'] > 0]['ac_density'].compute().to_numpy(),
+            100,
+            figure_path,
+            "Transcript autocorrelation density historgram",
+            "transcript_ac"
+        )
     timer.stop()
 
     helperfuncs.ddf_to_parquet(image_ddf, 'ac_density', spoqc_tmp_folder, [], modality)

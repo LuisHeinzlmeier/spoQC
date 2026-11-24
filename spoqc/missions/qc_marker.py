@@ -1,3 +1,5 @@
+from spoqc.reporting import plots_enabled, plots_only
+
 import numpy as np
 import sys
 import matplotlib.pyplot as plt
@@ -11,6 +13,7 @@ from plotly.subplots import make_subplots
 
 from .. import helperfuncs
 
+@plots_only
 def plot_marker_density_and_scatter(sdata, figure_path, markers, name):
 
     df = pd.DataFrame({
@@ -112,6 +115,7 @@ def plot_marker_density_and_scatter(sdata, figure_path, markers, name):
 
 
 
+@plots_only
 def plot_marker_boxplot(sdata, figure_path, markers, annotation_key, name):
 
     log2fc_list = []
@@ -269,6 +273,7 @@ def compute_radius_lists(rna_adata, radius, annotation_key, markers, figure_path
     return celltype_list, celltype_mean_list, celltype_maker_list, [radius] * len(celltype_mean_list)
 
 
+@plots_only
 def plot_marker_radius_line(sdata, figure_path, markers, name, threads, annotation_key, radi):
     
     rna_adata = sdata['table']
@@ -342,6 +347,9 @@ def plot_sanpy_score_genes(sdata, figure_path, markers, name):
         df[f'{name}_{celltype}_score_shifted'] = helperfuncs.min_value_shift(df[f'{name}_{celltype}_score'])
         celltype_list = celltype_list + [celltype]*len(scores)
         scores_list = scores_list + scores
+
+    if not plots_enabled():
+        return
 
     # Set up the plot grid
     plt.figure(figsize=(20, 5))
