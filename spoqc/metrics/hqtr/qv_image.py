@@ -1,3 +1,5 @@
+from spoqc.reporting import plots_enabled
+
 import spatialdata as sd
 import numpy as np
 import dask.array as da
@@ -55,27 +57,29 @@ def _generate_transcript_quality_density_image(
 
     if ( figure_path != None ):
         if ( flip ):
-            helperfuncs.plot_pixels(
-                figure_path,
-                np.flipud(xy_kernel_transcript_density),
-                imagedim,
-                'transcript_qv_density',
-                'Transcript QV Density', 
-                'gray',
-                True,
-                True,
-            )
+            if plots_enabled():
+                helperfuncs.plot_pixels(
+                    figure_path,
+                    np.flipud(xy_kernel_transcript_density),
+                    imagedim,
+                    'transcript_qv_density',
+                    'Transcript QV Density',
+                    'gray',
+                    True,
+                    True,
+                )
         else:
-            helperfuncs.plot_pixels(
-                figure_path,
-                xy_kernel_transcript_density,
-                imagedim,
-                'transcript_qv_density',
-                'Transcript QV Density', 
-                'gray',
-                True,
-                True,
-            )
+            if plots_enabled():
+                helperfuncs.plot_pixels(
+                    figure_path,
+                    xy_kernel_transcript_density,
+                    imagedim,
+                    'transcript_qv_density',
+                    'Transcript QV Density',
+                    'gray',
+                    True,
+                    True,
+                )
 
     return xy_kernel_transcript_density.flatten()
 
@@ -100,8 +104,9 @@ def _transcript_qv_image(
 
     print("[NOTE] Generate qv histogram")
     timer.start()
-    helperfuncs.plot_histogram_for_array(image_ddf['qv_density'].compute().to_numpy(), 100,
-                                         figure_path, "Transcript QV", "transcript_qv")
+    if plots_enabled():
+        helperfuncs.plot_histogram_for_array(image_ddf['qv_density'].compute().to_numpy(), 100,
+                                             figure_path, "Transcript QV", "transcript_qv")
     timer.stop()
 
     helperfuncs.ddf_to_parquet(image_ddf, 'qv_density', spoqc_tmp_folder, [], modality)

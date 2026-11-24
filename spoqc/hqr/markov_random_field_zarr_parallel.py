@@ -1,5 +1,7 @@
 
 # In[]
+from spoqc.reporting import plots_only
+
 import numpy as np
 import time
 import matplotlib.pyplot as plt
@@ -334,6 +336,7 @@ def first_version_loopy_belief_propagation_parallel(
         if os.path.exists(mm_path):
             os.remove(mm_path)
 
+@plots_only
 def visualize_markov_calculation(average_cell_probability_image, labels, figure_path, flip=False):
     # Automatically scale figure size based on image resolution
     img_h, img_w = average_cell_probability_image.shape

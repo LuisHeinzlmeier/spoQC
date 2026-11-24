@@ -1,3 +1,5 @@
+from spoqc.reporting import plots_enabled
+
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -102,28 +104,30 @@ def start_combining_masks(
         for m in ['hqcr', f'hqpr_{staining}', 'hqtr']:
             final_mask += np.array(mask_df[f'{m}_mask'])
 
-            helperfuncs.plot_pixels(
-                figure_path,
-                np.array(mask_df[f'{m}_mask']).reshape(dim_x, dim_y)[y_1:y_2, x_1_org:x_2_org],
-                imagedim_zoom,
-                f'{m}_zoom{type_of_belief}',
-                f'{m}_zoom{type_of_belief}',
-                'gray',
-                False,
-                True,
-                legend_dict={f"{m}": "#FFFFFF", "low Q": "#000000"}
-            )
+            if plots_enabled():
+                helperfuncs.plot_pixels(
+                    figure_path,
+                    np.array(mask_df[f'{m}_mask']).reshape(dim_x, dim_y)[y_1:y_2, x_1_org:x_2_org],
+                    imagedim_zoom,
+                    f'{m}_zoom{type_of_belief}',
+                    f'{m}_zoom{type_of_belief}',
+                    'gray',
+                    False,
+                    True,
+                    legend_dict={f"{m}": "#FFFFFF", "low Q": "#000000"}
+                )
 
-            helperfuncs.plot_pixels(
-                figure_path,
-                np.array(beliefs_df[f'{m}_beliefs']).reshape(dim_x, dim_y)[y_1:y_2, x_1_org:x_2_org],
-                imagedim_zoom,
-                f'{m}_beliefs_zoom{type_of_belief}',
-                f'{m}_beliefs_zoom{type_of_belief}',
-                'hot',
-                False,
-                False
-            )
+            if plots_enabled():
+                helperfuncs.plot_pixels(
+                    figure_path,
+                    np.array(beliefs_df[f'{m}_beliefs']).reshape(dim_x, dim_y)[y_1:y_2, x_1_org:x_2_org],
+                    imagedim_zoom,
+                    f'{m}_beliefs_zoom{type_of_belief}',
+                    f'{m}_beliefs_zoom{type_of_belief}',
+                    'hot',
+                    False,
+                    False
+                )
 
         colors = [
             (0.0, 'black'),   # 0
@@ -133,48 +137,51 @@ def start_combining_masks(
         ]
         cmap = LinearSegmentedColormap.from_list("custom_cmap", colors)
 
-        helperfuncs.plot_pixels(
-            figure_path,
-            final_mask.reshape(dim_x, dim_y)[y_1:y_2, x_1_org:x_2_org],
-            imagedim_zoom,
-            f'combined_masks_zoom{type_of_belief}',
-            f'combined_masks_zoom{type_of_belief}',
-            cmap,
-            False,
-            True,
-            legend_dict={"no mask": "#000000", "1 mask": "#0000FF", "2 masks": "#008000", "all masks": "#FFFF00"}
-        )
+        if plots_enabled():
+            helperfuncs.plot_pixels(
+                figure_path,
+                final_mask.reshape(dim_x, dim_y)[y_1:y_2, x_1_org:x_2_org],
+                imagedim_zoom,
+                f'combined_masks_zoom{type_of_belief}',
+                f'combined_masks_zoom{type_of_belief}',
+                cmap,
+                False,
+                True,
+                legend_dict={"no mask": "#000000", "1 mask": "#0000FF", "2 masks": "#008000", "all masks": "#FFFF00"}
+            )
 
         combined_beliefs = beliefs_df['hqcr_beliefs_smoothed'] + beliefs_df[f'hqpr_{staining}_beliefs_smoothed'] + beliefs_df['hqtr_beliefs_smoothed']
         combined_beliefs /= 3
 
-        helperfuncs.plot_pixels(
-            figure_path,
-            np.array(combined_beliefs).reshape(dim_x, dim_y)[y_1:y_2, x_1_org:x_2_org],
-            imagedim_zoom,
-            f'combined_beliefs_zoom{type_of_belief}', 
-            f'combined_beliefs_zoom{type_of_belief}', 
-            'hot',
-            False,
-            False
-        )
+        if plots_enabled():
+            helperfuncs.plot_pixels(
+                figure_path,
+                np.array(combined_beliefs).reshape(dim_x, dim_y)[y_1:y_2, x_1_org:x_2_org],
+                imagedim_zoom,
+                f'combined_beliefs_zoom{type_of_belief}',
+                f'combined_beliefs_zoom{type_of_belief}',
+                'hot',
+                False,
+                False
+            )
 
 
         # Generate the input figures again
         for seg in ['cell_labels', 'nucleus_labels']:
             values = sdata.labels[seg][resolution].image.values
             values = (values > 0.0).astype(np.uint8)
-            helperfuncs.plot_pixels(
-                figure_path,
-                np.flipud(values[y_1_org:y_2_org, x_1_org:x_2_org]),
-                imagedim_zoom,
-                f'input_segmentation_{seg}_zoom{type_of_belief}',
-                f'input_segmentation_{seg}_zoom{type_of_belief}',
-                'gray',
-                False,
-                True,
-                legend_dict={"mask": "#FFFFFF", "empty": "#000000"}
-            )
+            if plots_enabled():
+                helperfuncs.plot_pixels(
+                    figure_path,
+                    np.flipud(values[y_1_org:y_2_org, x_1_org:x_2_org]),
+                    imagedim_zoom,
+                    f'input_segmentation_{seg}_zoom{type_of_belief}',
+                    f'input_segmentation_{seg}_zoom{type_of_belief}',
+                    'gray',
+                    False,
+                    True,
+                    legend_dict={"mask": "#FFFFFF", "empty": "#000000"}
+                )
 
         for modality in ['hqpr', 'hqtr']:
 
@@ -217,13 +224,14 @@ def start_combining_masks(
             else:
                 sys.exit('[ERROR] Modality not supported')
 
-            helperfuncs.plot_pixels(
-                figure_path,
-                np.log10(xy_intensities + 1)[y_1:y_2, x_1_org:x_2_org],
-                imagedim_zoom,
-                name,
-                name,
-                'gray',
-                False,
-                False
-            )
+            if plots_enabled():
+                helperfuncs.plot_pixels(
+                    figure_path,
+                    np.log10(xy_intensities + 1)[y_1:y_2, x_1_org:x_2_org],
+                    imagedim_zoom,
+                    name,
+                    name,
+                    'gray',
+                    False,
+                    False
+                )

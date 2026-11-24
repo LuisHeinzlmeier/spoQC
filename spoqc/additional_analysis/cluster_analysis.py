@@ -1,4 +1,6 @@
 # In[]
+from spoqc.reporting import plots_enabled
+
 import numpy as np
 import pandas as pd
 import scanpy as sc
@@ -289,252 +291,255 @@ def celltype_cluster_analysis(
                 if rna.obs[umap_cat].isnull().values.any():
                     rna.obs[umap_cat] = rna.obs[umap_cat].fillna(0)
 
-                # --- general histograms ---
-                nbins = 50
+                if plots_enabled():
+                    # --- general histograms ---
+                    nbins = 50
 
-                if rna.n_obs < 50:
-                    nbins = 5
-                elif rna.n_obs < 30:
-                    nbins = 2
+                    if rna.n_obs < 50:
+                        nbins = 5
+                    elif rna.n_obs < 30:
+                        nbins = 2
 
-                fig = None
-                fig, ax = plt.subplots(figsize=(8, 4))
-                ax.hist(rna.obs[umap_cat], bins=nbins)
-                ax.set_xlabel(umap_cat)
-                ax.set_ylabel('Count')
-                ax.set_title(f'Distribution of {umap_cat}')
-                fig.savefig(os.path.join(figure_path, f'hist_{umap_cat}.png'), bbox_inches='tight')
-                fig.savefig(os.path.join(figure_path, f'hist_{umap_cat}.pdf'), bbox_inches='tight')
-                plt.close(fig)
+                    fig = None
+                    fig, ax = plt.subplots(figsize=(8, 4))
+                    ax.hist(rna.obs[umap_cat], bins=nbins)
+                    ax.set_xlabel(umap_cat)
+                    ax.set_ylabel('Count')
+                    ax.set_title(f'Distribution of {umap_cat}')
+                    fig.savefig(os.path.join(figure_path, f'hist_{umap_cat}.png'), bbox_inches='tight')
+                    fig.savefig(os.path.join(figure_path, f'hist_{umap_cat}.pdf'), bbox_inches='tight')
+                    plt.close(fig)
 
-                if ( umap_cat in ['nuceli_count', 'control_probe_counts']):
+                    if ( umap_cat in ['nuceli_count', 'control_probe_counts']):
 
-                    # --- barplot ---
-                    t = 0.0
-                    if ( umap_cat == 'nuceli_count' ):
-                        t = 1.0
+                        # --- barplot ---
+                        t = 0.0
+                        if ( umap_cat == 'nuceli_count' ):
+                            t = 1.0
 
-                    pct_umap_cat = [-1] * len(set(rna.obs['leiden']))
-                    leiden_cluster_list = []
+                        pct_umap_cat = [-1] * len(set(rna.obs['leiden']))
+                        leiden_cluster_list = []
 
-                    for g in rna.obs.groupby('leiden'):
-                        pct_umap_cat[int(g[0])] = (g[1][g[1][umap_cat] > t].size / g[1].size) * 100
-                        leiden_cluster_list.append(int(g[0]))
+                        for g in rna.obs.groupby('leiden'):
+                            pct_umap_cat[int(g[0])] = (g[1][g[1][umap_cat] > t].size / g[1].size) * 100
+                            leiden_cluster_list.append(int(g[0]))
 
-                    df = pd.DataFrame({'leiden': leiden_cluster_list, f'pct': pct_umap_cat})
-                    df = df.sort_values('leiden').reset_index(drop=True)
-                    df['leiden'] = df['leiden'].astype(str)
+                        df = pd.DataFrame({'leiden': leiden_cluster_list, f'pct': pct_umap_cat})
+                        df = df.sort_values('leiden').reset_index(drop=True)
+                        df['leiden'] = df['leiden'].astype(str)
 
-                    fig_pct = px.bar(
-                        df,
-                        x="leiden",
-                        y="pct",
-                        title=f"Percentage of cells having {umap_cat} > {t}"
-                    )
-                    fig_pct.update_yaxes(range=[0, 100])
-                    fig_pct.update_layout(xaxis_title="leiden cluster")
+                        fig_pct = px.bar(
+                            df,
+                            x="leiden",
+                            y="pct",
+                            title=f"Percentage of cells having {umap_cat} > {t}"
+                        )
+                        fig_pct.update_yaxes(range=[0, 100])
+                        fig_pct.update_layout(xaxis_title="leiden cluster")
 
-                    if ( html ):
-                        fig_pct.write_html(f"{figure_path}/barplot_pct_{umap_cat}.html")
-                    fig_pct.write_image(f"{figure_path}/barplot_pct_{umap_cat}.png", scale=3)
-                    fig_pct.write_image(f"{figure_path}/barplot_pct_{umap_cat}.pdf", scale=3)
+                        if ( html ):
+                            fig_pct.write_html(f"{figure_path}/barplot_pct_{umap_cat}.html")
+                        fig_pct.write_image(f"{figure_path}/barplot_pct_{umap_cat}.png", scale=3)
+                        fig_pct.write_image(f"{figure_path}/barplot_pct_{umap_cat}.pdf", scale=3)
 
-                else:
+                    else:
 
-                    # --- boxplots ---
-                    boxplot_trace = go.Box(
-                        x=rna.obs['leiden'],
-                        y=rna.obs[umap_cat]
-                    )
+                        # --- boxplots ---
+                        boxplot_trace = go.Box(
+                            x=rna.obs['leiden'],
+                            y=rna.obs[umap_cat]
+                        )
 
-                    # Create the layout
-                    layout = go.Layout(
-                        xaxis=dict(
-                            tickangle=-45,
-                            tickfont=dict(size=18),
-                            title="leiden cluster"
-                        ),
-                        yaxis=dict(
-                            title=umap_cat,
-                            tickfont=dict(size=18)
-                        ),
-                        height=500,
-                        width=800
-                    )
+                        # Create the layout
+                        layout = go.Layout(
+                            xaxis=dict(
+                                tickangle=-45,
+                                tickfont=dict(size=18),
+                                title="leiden cluster"
+                            ),
+                            yaxis=dict(
+                                title=umap_cat,
+                                tickfont=dict(size=18)
+                            ),
+                            height=500,
+                            width=800
+                        )
 
-                    layout.xaxis.update(
-                        categoryorder='array',
-                        categoryarray=sorted(rna.obs['leiden'].unique(), key=int)
-                    )
+                        layout.xaxis.update(
+                            categoryorder='array',
+                            categoryarray=sorted(rna.obs['leiden'].unique(), key=int)
+                        )
 
-                    # Create the figure
-                    fig = go.Figure(data=[boxplot_trace], layout=layout)
+                        # Create the figure
+                        fig = go.Figure(data=[boxplot_trace], layout=layout)
 
-                    helperfuncs.apply_general_plotly_layout(fig, False)
+                        helperfuncs.apply_general_plotly_layout(fig, False)
 
-                    if ( html ):
-                        fig.write_html(f"{figure_path}/boxplot_{umap_cat}.html")
-                    fig.write_image(f"{figure_path}/boxplot_{umap_cat}.png", scale=3)
-                    fig.write_image(f"{figure_path}/boxplot_{umap_cat}.pdf", scale=3)
+                        if ( html ):
+                            fig.write_html(f"{figure_path}/boxplot_{umap_cat}.html")
+                        fig.write_image(f"{figure_path}/boxplot_{umap_cat}.png", scale=3)
+                        fig.write_image(f"{figure_path}/boxplot_{umap_cat}.pdf", scale=3)
 
 
-                    # --- violin plots ---
-                    violin_trace = go.Violin(
-                        x=rna.obs['leiden'],
-                        y=rna.obs[umap_cat],
-                        box_visible=True,        # show embedded boxplot
-                        box=dict(fillcolor="white", line=dict(color="black")),
-                        meanline_visible=True,   # show mean line
-                        points=False,            # set to 'all' if you want scatter points
-                        spanmode='hard'          # truncate violin at actual data min/max
-                    )
+                        # --- violin plots ---
+                        violin_trace = go.Violin(
+                            x=rna.obs['leiden'],
+                            y=rna.obs[umap_cat],
+                            box_visible=True,        # show embedded boxplot
+                            box=dict(fillcolor="white", line=dict(color="black")),
+                            meanline_visible=True,   # show mean line
+                            points=False,            # set to 'all' if you want scatter points
+                            spanmode='hard'          # truncate violin at actual data min/max
+                        )
 
-                    # Create the layout
-                    layout = go.Layout(
-                        xaxis=dict(
-                            tickangle=-45,
-                            tickfont=dict(size=18),
-                            title="leiden cluster"
-                        ),
-                        yaxis=dict(
-                            title=umap_cat,
-                            tickfont=dict(size=18)
-                        ),
-                        height=500,
-                        width=800
-                    )
+                        # Create the layout
+                        layout = go.Layout(
+                            xaxis=dict(
+                                tickangle=-45,
+                                tickfont=dict(size=18),
+                                title="leiden cluster"
+                            ),
+                            yaxis=dict(
+                                title=umap_cat,
+                                tickfont=dict(size=18)
+                            ),
+                            height=500,
+                            width=800
+                        )
 
-                    layout.xaxis.update(
-                        categoryorder='array',
-                        categoryarray=sorted(rna.obs['leiden'].unique(), key=int)
-                    )
+                        layout.xaxis.update(
+                            categoryorder='array',
+                            categoryarray=sorted(rna.obs['leiden'].unique(), key=int)
+                        )
 
-                    # Create the figure
-                    fig = go.Figure(data=[violin_trace], layout=layout)
+                        # Create the figure
+                        fig = go.Figure(data=[violin_trace], layout=layout)
 
-                    helperfuncs.apply_general_plotly_layout(fig, False)
+                        helperfuncs.apply_general_plotly_layout(fig, False)
 
-                    if ( html ):
-                        fig.write_html(f"{figure_path}/violin_{umap_cat}.html")
-                    fig.write_image(f"{figure_path}/violin_{umap_cat}.png", scale=3)
-                    fig.write_image(f"{figure_path}/violin_{umap_cat}.pdf", scale=3)
+                        if ( html ):
+                            fig.write_html(f"{figure_path}/violin_{umap_cat}.html")
+                        fig.write_image(f"{figure_path}/violin_{umap_cat}.png", scale=3)
+                        fig.write_image(f"{figure_path}/violin_{umap_cat}.pdf", scale=3)
 
             else:
 
-                # Build a DataFrame with everything we need
-                df = pd.DataFrame({
-                    'UMAP1': X[:, 0],
-                    'UMAP2': X[:, 1],
-                    umap_cat: rna.obs[umap_cat].values
-                })
+                if plots_enabled():
+                    # Build a DataFrame with everything we need
+                    df = pd.DataFrame({
+                        'UMAP1': X[:, 0],
+                        'UMAP2': X[:, 1],
+                        umap_cat: rna.obs[umap_cat].values
+                    })
 
-                fig = px.scatter(
-                    df,
-                    x="UMAP1",
-                    y="UMAP2",
-                    color=umap_cat,
-                    labels={"color": umap_cat},
-                    category_orders={umap_cat: labels} if labels is not None else None,
-                    color_discrete_sequence=colors if colors is not None else None,
-                    custom_data=[umap_cat]
-                )
-
-                # Attach umap_cat per point and format hover
-                if ( len(labels) > 2 and umap_cat != annotation_key ):
-                    fig.update_traces(hovertemplate=
-                        "UMAP1=%{x:.3f}<br>"
-                        "UMAP2=%{y:.3f}<br>"
-                        f"{umap_cat}=%{{customdata[0]}}"
-                        "<extra></extra>"
-                    )
-                if ( len(labels) <= 2 ):
-                    fig.update_traces(hovertemplate=
-                        "UMAP1=%{x:.3f}<br>"
-                        "UMAP2=%{y:.3f}<br>"
-                        "<extra></extra>"
+                    fig = px.scatter(
+                        df,
+                        x="UMAP1",
+                        y="UMAP2",
+                        color=umap_cat,
+                        labels={"color": umap_cat},
+                        category_orders={umap_cat: labels} if labels is not None else None,
+                        color_discrete_sequence=colors if colors is not None else None,
+                        custom_data=[umap_cat]
                     )
 
-                fig.update_layout(legend={'itemsizing': 'constant'})
-                fig.update_traces(marker_size=2)
-                fig.update_xaxes(range=xrange, autorange=False)
-                fig.update_yaxes(range=yrange, autorange=False, scaleanchor="x", scaleratio=1)
+                    # Attach umap_cat per point and format hover
+                    if ( len(labels) > 2 and umap_cat != annotation_key ):
+                        fig.update_traces(hovertemplate=
+                            "UMAP1=%{x:.3f}<br>"
+                            "UMAP2=%{y:.3f}<br>"
+                            f"{umap_cat}=%{{customdata[0]}}"
+                            "<extra></extra>"
+                        )
+                    if ( len(labels) <= 2 ):
+                        fig.update_traces(hovertemplate=
+                            "UMAP1=%{x:.3f}<br>"
+                            "UMAP2=%{y:.3f}<br>"
+                            "<extra></extra>"
+                        )
 
-                plot_suffix = ''
-                if ( umap_cat in cell_metrices ):
-                    plot_suffix = '_hqcr' # this helps me later to sort plots
+                    fig.update_layout(legend={'itemsizing': 'constant'})
+                    fig.update_traces(marker_size=2)
+                    fig.update_xaxes(range=xrange, autorange=False)
+                    fig.update_yaxes(range=yrange, autorange=False, scaleanchor="x", scaleratio=1)
+
+                    plot_suffix = ''
+                    if ( umap_cat in cell_metrices ):
+                        plot_suffix = '_hqcr' # this helps me later to sort plots
                 
-                if ( html ):
-                    fig.write_html(f"{figure_path}/umap_plot_{umap_cat + plot_suffix}.html")
-                elif ( umap_cat in [annotation_key, 'leiden'] ):
-                    fig.write_html(
-                        f"{figure_path}/umap_plot_{umap_cat + plot_suffix}.html",
-                        full_html=False,
-                        include_plotlyjs='cdn',
-                    )
-                helperfuncs.plotly_save_as_png(fig, f"{figure_path}/umap_plot_{umap_cat + plot_suffix}.png")
-                helperfuncs.plotly_save_as_png(fig, f"{figure_path}/umap_plot_{umap_cat + plot_suffix}.pdf")
-
-            if ( umap_cat in ['wdoublet', 'nucleus_free', 'border_cell'] ):
-
-                for x in ['leiden', annotation_key]:
-
-                    bar_plot_pct = pd.DataFrame(
-                        rna.obs
-                        .groupby(x)[umap_cat]
-                        .mean() * 100
-                    )
-                    bar_plot_pct.columns = ['pct']
-                    bar_plot_pct[x] = list(bar_plot_pct.index)
-
-                    fig_pct = px.bar(
-                        bar_plot_pct,
-                        x=x,
-                        y="pct",
-                        title=f"Percentage of cells classified as {umap_cat}"
-                    )
-                    fig_pct.update_yaxes(range=[0, 100])
-                    fig_pct.update_layout(xaxis_title="leiden cluster")
-
                     if ( html ):
-                        fig_pct.write_html(f"{figure_path}/barplot_pct_{umap_cat}_{x}.html")
-                    fig_pct.write_image(f"{figure_path}/barplot_pct_{umap_cat}_{x}.png", scale=3)
-                    fig_pct.write_image(f"{figure_path}/barplot_pct_{umap_cat}_{x}.pdf", scale=3)
+                        fig.write_html(f"{figure_path}/umap_plot_{umap_cat + plot_suffix}.html")
+                    elif ( umap_cat in [annotation_key, 'leiden'] ):
+                        fig.write_html(
+                            f"{figure_path}/umap_plot_{umap_cat + plot_suffix}.html",
+                            full_html=False,
+                            include_plotlyjs='cdn',
+                        )
+                    helperfuncs.plotly_save_as_png(fig, f"{figure_path}/umap_plot_{umap_cat + plot_suffix}.png")
+                    helperfuncs.plotly_save_as_png(fig, f"{figure_path}/umap_plot_{umap_cat + plot_suffix}.pdf")
+
+                if ( umap_cat in ['wdoublet', 'nucleus_free', 'border_cell'] ):
+
+                    for x in ['leiden', annotation_key]:
+
+                        bar_plot_pct = pd.DataFrame(
+                            rna.obs
+                            .groupby(x)[umap_cat]
+                            .mean() * 100
+                        )
+                        bar_plot_pct.columns = ['pct']
+                        bar_plot_pct[x] = list(bar_plot_pct.index)
+
+                        fig_pct = px.bar(
+                            bar_plot_pct,
+                            x=x,
+                            y="pct",
+                            title=f"Percentage of cells classified as {umap_cat}"
+                        )
+                        fig_pct.update_yaxes(range=[0, 100])
+                        fig_pct.update_layout(xaxis_title="leiden cluster")
+
+                        if ( html ):
+                            fig_pct.write_html(f"{figure_path}/barplot_pct_{umap_cat}_{x}.html")
+                        fig_pct.write_image(f"{figure_path}/barplot_pct_{umap_cat}_{x}.png", scale=3)
+                        fig_pct.write_image(f"{figure_path}/barplot_pct_{umap_cat}_{x}.pdf", scale=3)
         timer.stop()
 
-        # --- cell composition plot -----
-        print("[NOTE] Generate cell type composition plot")
-        timer.start()
-        ctf_df = analysis_funcs.create_fraction_df('leiden', annotation_key, rna)
+        if plots_enabled():
+            # --- cell composition plot -----
+            print("[NOTE] Generate cell type composition plot")
+            timer.start()
+            ctf_df = analysis_funcs.create_fraction_df('leiden', annotation_key, rna)
 
-        leiden_order = sorted(ctf_df["x"].unique(), key=lambda x: int(x))  # if leiden labels are numeric strings
-        label_order = sorted(ctf_df["label"].unique())
+            leiden_order = sorted(ctf_df["x"].unique(), key=lambda x: int(x))  # if leiden labels are numeric strings
+            label_order = sorted(ctf_df["label"].unique())
 
-        fig = px.bar(
-            ctf_df,
-            x="x",
-            y="fractions",
-            labels={"x": "leiden"},
-            color="label",
-            color_discrete_sequence=celltype_colors,
-            category_orders={
-                "x": leiden_order,      # x-axis order
-                "label": label_order,   # legend and stack order
-            },
-        )
+            fig = px.bar(
+                ctf_df,
+                x="x",
+                y="fractions",
+                labels={"x": "leiden"},
+                color="label",
+                color_discrete_sequence=celltype_colors,
+                category_orders={
+                    "x": leiden_order,      # x-axis order
+                    "label": label_order,   # legend and stack order
+                },
+            )
 
-        n_labels = len(set(ctf_df['label']))
-        n_x = len(set(ctf_df['x']))
-        fig.update_layout(
-            width=max(1000, n_x * 20),
-            height=max(600, n_labels * 30)
-        )
-        fig.update_xaxes(tickangle=-45)
-        fig.update_yaxes(range=[0, 1.0])
+            n_labels = len(set(ctf_df['label']))
+            n_x = len(set(ctf_df['x']))
+            fig.update_layout(
+                width=max(1000, n_x * 20),
+                height=max(600, n_labels * 30)
+            )
+            fig.update_xaxes(tickangle=-45)
+            fig.update_yaxes(range=[0, 1.0])
 
-        if ( html ):
-            fig.write_html(f"{figure_path}/fractions_celltype_leiden.html")
-        fig.write_image(f"{figure_path}/fractions_celltype_leiden.png", scale=3)
-        fig.write_image(f"{figure_path}/fractions_celltype_leiden.pdf", scale=3)
+            if ( html ):
+                fig.write_html(f"{figure_path}/fractions_celltype_leiden.html")
+            fig.write_image(f"{figure_path}/fractions_celltype_leiden.png", scale=3)
+            fig.write_image(f"{figure_path}/fractions_celltype_leiden.pdf", scale=3)
 
         done_file = open(f"{figure_path}/done.txt", "w")
         done_file.write("its done")
@@ -627,6 +632,52 @@ def celltype_cluster_analysis(
             c
         )
 
+        if plots_enabled():
+            # Build a DataFrame with everything we need
+            df = pd.DataFrame({
+                'UMAP1': X[:, 0],
+                'UMAP2': X[:, 1],
+                c: rna.obs[c].values
+            })
+
+            # Decide your desired order once:
+            bool_order = [False, True]
+            color_map = {False: 'lightblue', True: 'black'}
+
+            fig = px.scatter(
+                df,
+                x="UMAP1",
+                y="UMAP2",
+                color=c,
+                category_orders={c: bool_order},
+                color_discrete_map=color_map
+            )
+
+            fig.update_layout(legend={'itemsizing': 'constant'})
+            fig.update_traces(marker_size=2)
+            fig.update_xaxes(range=xrange, autorange=False)
+            fig.update_yaxes(range=yrange, autorange=False, scaleanchor="x", scaleratio=1)
+
+            if ( html ):
+                fig.write_html(f"{figure_path}/umap_plot_{c}.html")
+            helperfuncs.plotly_save_as_png(fig, f"{figure_path}/umap_plot_{c}.png")
+            helperfuncs.plotly_save_as_png(fig, f"{figure_path}/umap_plot_{c}.pdf")
+
+    c = 'hqr_filtered_out'
+    hqpr_cols = [f'hqpr_{staining}_filtered_out' for staining in stainings]
+    rna.obs[c] = rna.obs[['hqcr_filtered_out', 'hqtr_filtered_out'] + hqpr_cols].any(axis=1)
+
+    helperfuncs.plot_scatter(
+        rna,
+        figure_path,
+        c,
+        None,
+        c,
+        ['lightblue', 'black'],
+        c
+    )
+
+    if plots_enabled():
         # Build a DataFrame with everything we need
         df = pd.DataFrame({
             'UMAP1': X[:, 0],
@@ -656,50 +707,6 @@ def celltype_cluster_analysis(
             fig.write_html(f"{figure_path}/umap_plot_{c}.html")
         helperfuncs.plotly_save_as_png(fig, f"{figure_path}/umap_plot_{c}.png")
         helperfuncs.plotly_save_as_png(fig, f"{figure_path}/umap_plot_{c}.pdf")
-
-    c = 'hqr_filtered_out'
-    hqpr_cols = [f'hqpr_{staining}_filtered_out' for staining in stainings]
-    rna.obs[c] = rna.obs[['hqcr_filtered_out', 'hqtr_filtered_out'] + hqpr_cols].any(axis=1)
-    
-    helperfuncs.plot_scatter(
-        rna,
-        figure_path,
-        c,
-        None,
-        c,
-        ['lightblue', 'black'], 
-        c
-    )
-
-    # Build a DataFrame with everything we need
-    df = pd.DataFrame({
-        'UMAP1': X[:, 0],
-        'UMAP2': X[:, 1],
-        c: rna.obs[c].values
-    })
-
-    # Decide your desired order once:
-    bool_order = [False, True]
-    color_map = {False: 'lightblue', True: 'black'}
-
-    fig = px.scatter(
-        df,
-        x="UMAP1",
-        y="UMAP2",
-        color=c,
-        category_orders={c: bool_order},
-        color_discrete_map=color_map
-    )
-
-    fig.update_layout(legend={'itemsizing': 'constant'})
-    fig.update_traces(marker_size=2)
-    fig.update_xaxes(range=xrange, autorange=False)
-    fig.update_yaxes(range=yrange, autorange=False, scaleanchor="x", scaleratio=1)
-
-    if ( html ):
-        fig.write_html(f"{figure_path}/umap_plot_{c}.html")
-    helperfuncs.plotly_save_as_png(fig, f"{figure_path}/umap_plot_{c}.png")
-    helperfuncs.plotly_save_as_png(fig, f"{figure_path}/umap_plot_{c}.pdf")
     timer.stop()
 
     ####################################################################################################################
@@ -713,7 +720,7 @@ def celltype_cluster_analysis(
     ####################################################################################################################
     # Traffic Light system plots
     ####################################################################################################################
-    if ( 'hqcr_traffic_light' in rna.obs.columns ):
+    if plots_enabled() and 'hqcr_traffic_light' in rna.obs.columns:
 
         print("[NOTE] Generate traffic light plots")
         timer.start()

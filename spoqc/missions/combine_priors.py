@@ -1,3 +1,5 @@
+from spoqc.reporting import plots_enabled
+
 import pkgutil
 import importlib
 import dask.dataframe as dd
@@ -32,18 +34,19 @@ def combine_priors_hqpr(enterprise):
         mask_name: (row_means_series > 0.5).astype("int8"),
     }).persist()
 
-    helperfuncs.plot_pixels(
-        figure_path,
-        enterprise.hqpr_priorset.prior_ddf[belief_name].compute().to_numpy().reshape(
-            enterprise.cargo.dim_x, enterprise.cargo.dim_y
-        ),
-        enterprise.cargo.imagedim,
-        'beliefs',
-        'Combined probability (beliefs)', 
-        'hot',
-        False,
-        False
-    )
+    if plots_enabled():
+        helperfuncs.plot_pixels(
+            figure_path,
+            enterprise.hqpr_priorset.prior_ddf[belief_name].compute().to_numpy().reshape(
+                enterprise.cargo.dim_x, enterprise.cargo.dim_y
+            ),
+            enterprise.cargo.imagedim,
+            'beliefs',
+            'Combined probability (beliefs)',
+            'hot',
+            False,
+            False
+        )
 
     print("[NOTE] Writing out data")
     timer = helperfuncs.Timer()
@@ -73,18 +76,19 @@ def combine_priors_hqtr(enterprise):
         mask_name: (row_means_series > 0.5).astype("int8"),
     }).persist()
 
-    helperfuncs.plot_pixels(
-        figure_path,
-        enterprise.hqtr_priorset.prior_ddf[belief_name].compute().to_numpy().reshape(
-            enterprise.cargo.dim_x, enterprise.cargo.dim_y
-        ),
-        enterprise.cargo.imagedim,
-        'beliefs',
-        'Combined probability (beliefs)', 
-        'hot',
-        False,
-        False
-    )
+    if plots_enabled():
+        helperfuncs.plot_pixels(
+            figure_path,
+            enterprise.hqtr_priorset.prior_ddf[belief_name].compute().to_numpy().reshape(
+                enterprise.cargo.dim_x, enterprise.cargo.dim_y
+            ),
+            enterprise.cargo.imagedim,
+            'beliefs',
+            'Combined probability (beliefs)',
+            'hot',
+            False,
+            False
+        )
 
     print("[NOTE] Writing out data")
     timer = helperfuncs.Timer()

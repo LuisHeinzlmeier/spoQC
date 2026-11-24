@@ -1,4 +1,6 @@
 #In[]
+from spoqc.reporting import plots_enabled
+
 import json
 import scanpy as sc
 import plotly.express as px   # plotly
@@ -155,49 +157,50 @@ def cellcycle_qc(
     # a score for G2M phase and the predicted cell cycle phase.
     sc.tl.score_genes_cell_cycle(rna_adata, s_genes=s_genes, g2m_genes=g2m_genes)
 
-    # Difference from Seurat. 
-    # The R package stores raw data, scaled data and variable genes information in separate slots, 
-    # Scanpy instead keeps only one snapshot of the data. 
-    # This implies that PCA is always calculated on the entire dataset. 
-    # In order to calculate PCA reduction using only a subset of genes (like cell_cycle_genes), a trick should be used. 
-    # Basically we create a dummy object to store information of PCA projection, 
-    # which is then reincorporated into original dataset.
-    rna_adata_cc_genes = rna_adata[:, cell_cycle_genes]
-    sc.tl.pca(rna_adata_cc_genes, use_highly_variable=False)
+    if plots_enabled():
+        # Difference from Seurat.
+        # The R package stores raw data, scaled data and variable genes information in separate slots,
+        # Scanpy instead keeps only one snapshot of the data.
+        # This implies that PCA is always calculated on the entire dataset.
+        # In order to calculate PCA reduction using only a subset of genes (like cell_cycle_genes), a trick should be used.
+        # Basically we create a dummy object to store information of PCA projection,
+        # which is then reincorporated into original dataset.
+        rna_adata_cc_genes = rna_adata[:, cell_cycle_genes]
+        sc.tl.pca(rna_adata_cc_genes, use_highly_variable=False)
 
-    for o in ['phase']:
+        for o in ['phase']:
 
-        colors=[]
+            colors=[]
 
-        if o == 'phase':
-            colors=plot_colors_phase
+            if o == 'phase':
+                colors=plot_colors_phase
 
-        fig = px.scatter(
-            rna_adata_cc_genes.obsm["X_pca"], x=0, y=1, labels={"0":"PC1", "1":"PC2", "color": "donor"},
-            category_orders={"color": sorted(set(list(rna_adata.obs[o])))},
-            color_discrete_sequence=colors,
-            color=list(rna_adata.obs[o])
-        )
+            fig = px.scatter(
+                rna_adata_cc_genes.obsm["X_pca"], x=0, y=1, labels={"0":"PC1", "1":"PC2", "color": "donor"},
+                category_orders={"color": sorted(set(list(rna_adata.obs[o])))},
+                color_discrete_sequence=colors,
+                color=list(rna_adata.obs[o])
+            )
         
-        fig.update_layout(legend= {'itemsizing': 'constant'}) # keeps marker size bigger
-        fig.update_traces(marker_size=10)
+            fig.update_layout(legend= {'itemsizing': 'constant'}) # keeps marker size bigger
+            fig.update_traces(marker_size=10)
         
-        fig.write_html(f"{figure_path}/scatter_cellcylce_{o}.html")
-        fig.write_image(f"{figure_path}/scatter_cellcylce_{o}.png", scale=3)
-        fig.write_image(f"{figure_path}/scatter_cellcylce_{o}.pdf", scale=3)
+            fig.write_html(f"{figure_path}/scatter_cellcylce_{o}.html")
+            fig.write_image(f"{figure_path}/scatter_cellcylce_{o}.png", scale=3)
+            fig.write_image(f"{figure_path}/scatter_cellcylce_{o}.pdf", scale=3)
 
-    for x in ['sample']:
+        for x in ['sample']:
 
-        fig = px.bar(
-            helperfuncs.create_fraction_df(rna_adata, x, 'phase'), x='fractions', y='x', 
-            labels={"y": x},
-            color='label', 
-            color_discrete_sequence=plot_colors_phase
-        )
+            fig = px.bar(
+                helperfuncs.create_fraction_df(rna_adata, x, 'phase'), x='fractions', y='x',
+                labels={"y": x},
+                color='label',
+                color_discrete_sequence=plot_colors_phase
+            )
         
-        fig.write_html(f"{figure_path}/barplot_{x}_cellcycle_fractions.html")
-        fig.write_image(f"{figure_path}/barplot_{x}_cellcycle_fractions.png", scale=3)
-        fig.write_image(f"{figure_path}/barplot_{x}_cellcycle_fractions.pdf", scale=3)
+            fig.write_html(f"{figure_path}/barplot_{x}_cellcycle_fractions.html")
+            fig.write_image(f"{figure_path}/barplot_{x}_cellcycle_fractions.png", scale=3)
+            fig.write_image(f"{figure_path}/barplot_{x}_cellcycle_fractions.pdf", scale=3)
 
     return rna_adata
 

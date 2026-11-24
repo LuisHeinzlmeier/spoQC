@@ -1,5 +1,7 @@
 
 # In[]
+from spoqc.reporting import plots_enabled
+
 import ovrlpy
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -59,97 +61,98 @@ def _calc_doublet_score(
         integrity_sigma=integrity_sigma,
     ).to_pandas()
 
-    plt.scatter(
-        doublet_df["x"],
-        doublet_df["y"],
-        c=doublet_df["integrity"],
-        s=1,
-        cmap="viridis",
-        vmin=0,
-        vmax=1,
-    )
-    plt.gca().set_aspect("equal")
-    plt.colorbar()
-    plt.xlabel("x")
-    plt.ylabel("y")
-    plt.savefig(f'{figure_path}/scatter_signal_integrity.png')
-    plt.savefig(f'{figure_path}/scatter_signal_integrity.pdf')
-    plt.close()
-
-    transcripts_processed = ovrlp.transcripts.to_pandas()
-    fig = plt.figure(figsize=(10, 10))
-    ax = plt.subplot(111, projection="3d")
-    for i in range(-2, 3):
-        subset = transcripts_processed[
-            (transcripts_processed['z'] - transcripts_processed['z_center']).between(i, i + 1)
-        ]
-        # downsample the number of transcripts
-        subset = subset[::100]
-
-        ax.scatter(subset["x"], subset["y"], i, s=1, alpha=0.1)
-    ratio = transcripts_processed["x"].max() / transcripts_processed["y"].max()
-    ax.set_box_aspect([ratio, 1, 0.75])
-    ax.set_xlabel("x")
-    ax.set_ylabel("y")
-    ax.set_zlabel("z")
-    plt.tight_layout(pad=2)
-    plt.savefig(f'{figure_path}/scatter_signal_integrity_3d.png')
-    plt.savefig(f'{figure_path}/scatter_signal_integrity_3d.pdf')
-    plt.close()
-
-    # Integrity density plot
-    plt.figure(figsize=(10, 5))
-    plt.subplot(1, 2, 1)
-    sns.histplot(doublet_df["integrity"], kde=True, bins=30, color="blue", alpha=0.6)
-    plt.title("Density Histogram of Integrity")
-    plt.xlabel("Integrity")
-    plt.ylabel("Density")
-
-    # Signal density plot
-    plt.subplot(1, 2, 2)
-    sns.histplot(doublet_df["signal"], kde=True, bins=30, color="green", alpha=0.6)
-    plt.title("Density Histogram of Signal")
-    plt.xlabel("Signal")
-    plt.ylabel("Density")
-    plt.tight_layout()
-
-    plt.savefig(f'{figure_path}/histogram_signal_integrity_and_signal.png')
-    plt.savefig(f'{figure_path}/histogram_signal_integrity_and_signal.pdf')
-    plt.close()
-    fig = ovrlpy.plot_signal_integrity(ovrlp, signal_threshold=signal_threshold)
-    plt.tight_layout()
-    plt.savefig(f'{figure_path}/spatial_signal_integrity_map.png')
-    plt.savefig(f'{figure_path}/spatial_signal_integrity_map.pdf')
-    plt.close()
-
-    if ( len(doublet_df) < num_doublet ):
-        num_doublet = len(doublet_df)
-
-    for i in range(0, num_doublet):
-
-        doublet_case = i
-        x, y = doublet_df.loc[doublet_case, ["x", "y"]]
-        fig = ovrlpy.plot_region_of_interest(
-            ovrlp,
-            x,
-            y,
-            window_size=window_sizes[0],
+    if plots_enabled():
+        plt.scatter(
+            doublet_df["x"],
+            doublet_df["y"],
+            c=doublet_df["integrity"],
+            s=1,
+            cmap="viridis",
+            vmin=0,
+            vmax=1,
         )
-        # Adjust layout to prevent overlap
-        fig.tight_layout()
-        fig.savefig(f'{figure_path}/doublet_case_{i}_zoomed.png')
-        fig.savefig(f'{figure_path}/doublet_case_{i}_zoomed.pdf')
+        plt.gca().set_aspect("equal")
+        plt.colorbar()
+        plt.xlabel("x")
+        plt.ylabel("y")
+        plt.savefig(f'{figure_path}/scatter_signal_integrity.png')
+        plt.savefig(f'{figure_path}/scatter_signal_integrity.pdf')
+        plt.close()
 
-        x, y = doublet_df.loc[doublet_case, ["x", "y"]]
-        fig = ovrlpy.plot_region_of_interest(
-            ovrlp,
-            x,
-            y,
-            window_size=window_sizes[1],
-        )
-        fig.tight_layout()
-        fig.savefig(f'{figure_path}/doublet_case_{i}.png')
-        fig.savefig(f'{figure_path}/doublet_case_{i}.pdf')
+        transcripts_processed = ovrlp.transcripts.to_pandas()
+        fig = plt.figure(figsize=(10, 10))
+        ax = plt.subplot(111, projection="3d")
+        for i in range(-2, 3):
+            subset = transcripts_processed[
+                (transcripts_processed['z'] - transcripts_processed['z_center']).between(i, i + 1)
+            ]
+            # downsample the number of transcripts
+            subset = subset[::100]
+
+            ax.scatter(subset["x"], subset["y"], i, s=1, alpha=0.1)
+        ratio = transcripts_processed["x"].max() / transcripts_processed["y"].max()
+        ax.set_box_aspect([ratio, 1, 0.75])
+        ax.set_xlabel("x")
+        ax.set_ylabel("y")
+        ax.set_zlabel("z")
+        plt.tight_layout(pad=2)
+        plt.savefig(f'{figure_path}/scatter_signal_integrity_3d.png')
+        plt.savefig(f'{figure_path}/scatter_signal_integrity_3d.pdf')
+        plt.close()
+
+        # Integrity density plot
+        plt.figure(figsize=(10, 5))
+        plt.subplot(1, 2, 1)
+        sns.histplot(doublet_df["integrity"], kde=True, bins=30, color="blue", alpha=0.6)
+        plt.title("Density Histogram of Integrity")
+        plt.xlabel("Integrity")
+        plt.ylabel("Density")
+
+        # Signal density plot
+        plt.subplot(1, 2, 2)
+        sns.histplot(doublet_df["signal"], kde=True, bins=30, color="green", alpha=0.6)
+        plt.title("Density Histogram of Signal")
+        plt.xlabel("Signal")
+        plt.ylabel("Density")
+        plt.tight_layout()
+
+        plt.savefig(f'{figure_path}/histogram_signal_integrity_and_signal.png')
+        plt.savefig(f'{figure_path}/histogram_signal_integrity_and_signal.pdf')
+        plt.close()
+        fig = ovrlpy.plot_signal_integrity(ovrlp, signal_threshold=signal_threshold)
+        plt.tight_layout()
+        plt.savefig(f'{figure_path}/spatial_signal_integrity_map.png')
+        plt.savefig(f'{figure_path}/spatial_signal_integrity_map.pdf')
+        plt.close()
+
+        if ( len(doublet_df) < num_doublet ):
+            num_doublet = len(doublet_df)
+
+        for i in range(0, num_doublet):
+
+            doublet_case = i
+            x, y = doublet_df.loc[doublet_case, ["x", "y"]]
+            fig = ovrlpy.plot_region_of_interest(
+                ovrlp,
+                x,
+                y,
+                window_size=window_sizes[0],
+            )
+            # Adjust layout to prevent overlap
+            fig.tight_layout()
+            fig.savefig(f'{figure_path}/doublet_case_{i}_zoomed.png')
+            fig.savefig(f'{figure_path}/doublet_case_{i}_zoomed.pdf')
+
+            x, y = doublet_df.loc[doublet_case, ["x", "y"]]
+            fig = ovrlpy.plot_region_of_interest(
+                ovrlp,
+                x,
+                y,
+                window_size=window_sizes[1],
+            )
+            fig.tight_layout()
+            fig.savefig(f'{figure_path}/doublet_case_{i}.png')
+            fig.savefig(f'{figure_path}/doublet_case_{i}.pdf')
 
     # Link doublet detection back to spatial.
     # Based on a distance parameter say if a cell might be a doublet or not.

@@ -1,3 +1,5 @@
+from spoqc.reporting import plots_enabled
+
 import numpy as np
 import os
 
@@ -26,16 +28,17 @@ def _pixel_energy(figure_path, xy_intensities, imagedim, name, spoqc_tmp_folder,
 
     log10_energy_image = np.log10(energy_image + 1)
 
-    helperfuncs.plot_pixels(
-        figure_path,
-        log10_energy_image,
-        imagedim,
-        'energy', 
-        'Log10 Pixel Energy', 
-        'hot',
-        False,
-        False
-    )
+    if plots_enabled():
+        helperfuncs.plot_pixels(
+            figure_path,
+            log10_energy_image,
+            imagedim,
+            'energy',
+            'Log10 Pixel Energy',
+            'hot',
+            False,
+            False
+        )
 
     helperfuncs.nparr_to_parquet(log10_energy_image.flatten(), name, spoqc_tmp_folder, tmp_suffix)
 

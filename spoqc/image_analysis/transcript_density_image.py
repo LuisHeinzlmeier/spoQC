@@ -1,3 +1,5 @@
+from spoqc.reporting import plots_enabled
+
 import spatialdata as sd
 import numpy as np
 import dask.dataframe as dd
@@ -43,7 +45,6 @@ def generate_transcript_density_image(
         )
         timer.stop()
 
-        nuclei_centroid_coords = sd.get_centroids(sdata['nucleus_boundaries'], coordinate_system='global').compute()
 
         # kernel_size = 2 * r + 1
         # Create circular kernel (disk mask)
@@ -58,7 +59,8 @@ def generate_transcript_density_image(
         timer.stop()
         # xy_kernel_transcript_density = xy_kernel_transcript_density.astype(np.uint16) # conversion needed for cv2
 
-        if ( figure_path != None ):
+        if plots_enabled() and figure_path is not None:
+            nuclei_centroid_coords = sd.get_centroids(sdata['nucleus_boundaries'], coordinate_system='global').compute()
 
             if ( flip ):
                 helperfuncs.plot_pixels(
@@ -66,7 +68,7 @@ def generate_transcript_density_image(
                     xy_kernel_transcript_density,
                     imagedim,
                     'transcript_density',
-                    'Transcript Density', 
+                    'Transcript Density',
                     'gray',
                     True,
                     True,
@@ -78,7 +80,7 @@ def generate_transcript_density_image(
                     np.flipud(xy_kernel_transcript_density),
                     imagedim,
                     'transcript_density',
-                    'Transcript Density', 
+                    'Transcript Density',
                     'gray',
                     True,
                     True,
