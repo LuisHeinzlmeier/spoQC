@@ -1,3 +1,5 @@
+from spoqc.reporting import plots_enabled
+
 import pandas as pd
 import numpy as np
 import plotly.express as px
@@ -268,17 +270,18 @@ def cell_quality_probability_refinement(sdata, imagedim, image_type, resolution,
     print(f'Are there any values bigger than 1: {has_values_over_1}')
 
     # Plot input prior image
-    helperfuncs.plot_pixels(
-        figure_path,
-        (average_cell_probability_image > 0).astype(np.uint8),
-        imagedim,
-        'input_priors',
-        'input_priors',
-        'gray',
-        False,
-        True,
-        legend_dict={"mask": "#FFFFFF", "empty": "#000000"}
-    )
+    if plots_enabled():
+        helperfuncs.plot_pixels(
+            figure_path,
+            (average_cell_probability_image > 0).astype(np.uint8),
+            imagedim,
+            'input_priors',
+            'input_priors',
+            'gray',
+            False,
+            True,
+            legend_dict={"mask": "#FFFFFF", "empty": "#000000"}
+        )
         
     beliefs, labels = hqr.markov_random_field_zarr_parallel.first_version_loopy_belief_propagation_parallel(
         average_cell_probability_image,
@@ -289,7 +292,8 @@ def cell_quality_probability_refinement(sdata, imagedim, image_type, resolution,
         normalize='total'
     )
 
-    hqr.markov_random_field_zarr_parallel.visualize_markov_calculation(average_cell_probability_image, labels[:], figure_path)
+    if plots_enabled():
+        hqr.markov_random_field_zarr_parallel.visualize_markov_calculation(average_cell_probability_image, labels[:], figure_path)
     map_values_to_cells(sdata, polys, image_type, resolution, labels[:], res_col, figure_path, 'markov_labels')
 
     # Write out hqcr mask
@@ -323,22 +327,23 @@ def start_exploration(enterprise, test_res=False):
 
         figure_path = f'{enterprise.args.output_dir}/hqcr/hqcr_ident/'
 
-        # Generate first the input cell and nucleus segmentation figures
-        for seg in ['cell_labels', 'nucleus_labels']:
-            values = enterprise.cargo.sdata.labels[seg][enterprise.args.resolution].image.values
-            values = (values > 0.0).astype(np.uint8)
-            helperfuncs.plot_pixels(
-                figure_path,
-                values,
-                enterprise.cargo.imagedim,
-                f'input_segmentation_{seg}',
-                f'input_segmentation_{seg}',
-                'gray',
-                False,
-                True,
-                legend_dict={"mask": "#FFFFFF", "empty": "#000000"},
-                flip=True
-            )
+        if plots_enabled():
+            # Generate first the input cell and nucleus segmentation figures
+            for seg in ['cell_labels', 'nucleus_labels']:
+                values = enterprise.cargo.sdata.labels[seg][enterprise.args.resolution].image.values
+                values = (values > 0.0).astype(np.uint8)
+                helperfuncs.plot_pixels(
+                    figure_path,
+                    values,
+                    enterprise.cargo.imagedim,
+                    f'input_segmentation_{seg}',
+                    f'input_segmentation_{seg}',
+                    'gray',
+                    False,
+                    True,
+                    legend_dict={"mask": "#FFFFFF", "empty": "#000000"},
+                    flip=True
+                )
 
         # Leiden clustering.
         print("[NOTE] Cell QC clustering")
@@ -379,45 +384,46 @@ def start_exploration(enterprise, test_res=False):
         enterprise.hqcr_set.cell_clustering_df['cell_area'] = enterprise.cargo.sdata['table'].obs['cell_area']
         enterprise.hqcr_set.cell_clustering_df['cell_region'] = enterprise.cargo.sdata['table'].obs['cell_region']
 
-        # Add for a better visualiation all of the data again as an all data cluster
-        cell_df_all = enterprise.hqcr_set.cell_clustering_df.copy()
-        cell_df_all['qc_cluster_str'] = ['all'] * len(cell_df_all)
-        cell_df_combined_with_all = pd.concat([enterprise.hqcr_set.cell_clustering_df, cell_df_all])
+        if plots_enabled():
+            # Add for a better visualiation all of the data again as an all data cluster
+            cell_df_all = enterprise.hqcr_set.cell_clustering_df.copy()
+            cell_df_all['qc_cluster_str'] = ['all'] * len(cell_df_all)
+            cell_df_combined_with_all = pd.concat([enterprise.hqcr_set.cell_clustering_df, cell_df_all])
 
-        print("[NOTE] Generate plots for HTMLs")
-        # Generate html for qc metrices
-        ncat = len(set(cell_df_combined_with_all['qc_cluster_str']))
-        catnames = list(set(cell_df_combined_with_all['qc_cluster_str']))
-        catnames.sort()
-        missions.plots_hqcr.generate_hqcr_html(
-            figure_path,
-            cell_df_combined_with_all,
-            'qc_cluster_str',
-            ncat,
-            catnames,
-            enterprise.hqcr_set.metrics,
-            write_static_images=False,
-        )
+            print("[NOTE] Generate plots for HTMLs")
+            # Generate html for qc metrices
+            ncat = len(set(cell_df_combined_with_all['qc_cluster_str']))
+            catnames = list(set(cell_df_combined_with_all['qc_cluster_str']))
+            catnames.sort()
+            missions.plots_hqcr.generate_hqcr_html(
+                figure_path,
+                cell_df_combined_with_all,
+                'qc_cluster_str',
+                ncat,
+                catnames,
+                enterprise.hqcr_set.metrics,
+                write_static_images=False,
+            )
 
-        # Generate html for quality cell regions (bad, small and hqcrs)
-        ncat = len(set(enterprise.hqcr_set.cell_clustering_df['cell_region']))
-        catnames = list(set(enterprise.hqcr_set.cell_clustering_df['cell_region']))
-        catnames.sort()
-        missions.plots_hqcr.generate_hqcr_html(
-            figure_path,
-            enterprise.hqcr_set.cell_clustering_df,
-            'cell_region',
-            ncat,
-            catnames,
-            enterprise.hqcr_set.metrics,
-            write_static_images=False,
-        )
+            # Generate html for quality cell regions (bad, small and hqcrs)
+            ncat = len(set(enterprise.hqcr_set.cell_clustering_df['cell_region']))
+            catnames = list(set(enterprise.hqcr_set.cell_clustering_df['cell_region']))
+            catnames.sort()
+            missions.plots_hqcr.generate_hqcr_html(
+                figure_path,
+                enterprise.hqcr_set.cell_clustering_df,
+                'cell_region',
+                ncat,
+                catnames,
+                enterprise.hqcr_set.metrics,
+                write_static_images=False,
+            )
 
-        # Generate html for just all the data
-        cell_df_all['data'] = list(cell_df_all['qc_cluster_str'])
-        ncat = len(set(cell_df_all['data']))
-        catnames = list(set(cell_df_all['data']))
-        catnames.sort()
-        missions.plots_hqcr.generate_hqcr_html(figure_path, cell_df_all, 'data', ncat, catnames, enterprise.hqcr_set.metrics)
+            # Generate html for just all the data
+            cell_df_all['data'] = list(cell_df_all['qc_cluster_str'])
+            ncat = len(set(cell_df_all['data']))
+            catnames = list(set(cell_df_all['data']))
+            catnames.sort()
+            missions.plots_hqcr.generate_hqcr_html(figure_path, cell_df_all, 'data', ncat, catnames, enterprise.hqcr_set.metrics)
 
         print("[finish]")

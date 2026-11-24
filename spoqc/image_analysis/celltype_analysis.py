@@ -1,3 +1,5 @@
+from spoqc.reporting import plots_enabled
+
 import pandas as pd
 import numpy as np
 import plotly.express as px
@@ -55,16 +57,17 @@ def start_image_celltype_analysis(
     # Intensities and scores are already flipped in pixel_score.py, same orientation as the mask.
 
     # Just sanity check for image orientation
-    helperfuncs.plot_pixels(
-        figure_path,
-        np.array(image_df[f'intensity']).reshape(dim_x, dim_y),
-        imagedim,
-        'intensity_check_rotation', 
-        'Log10 Pixel Energy', 
-        'hot',
-        False,
-        False
-    )
+    if plots_enabled():
+        helperfuncs.plot_pixels(
+            figure_path,
+            np.array(image_df[f'intensity']).reshape(dim_x, dim_y),
+            imagedim,
+            'intensity_check_rotation',
+            'Log10 Pixel Energy',
+            'hot',
+            False,
+            False
+        )
 
     # Cell df
     cell_df[annotation_key] = sdata['table'].obs[annotation_key]
@@ -80,77 +83,79 @@ def start_image_celltype_analysis(
             missions.hqcr.map_values_to_cells(sdata, polys, image_type, resolution, 
                                     image_df[qc_metric], qc_metric, figure_path, 'mean_values')
 
-            fig = px.violin(
-                sdata['table'].obs,
-                x=qc_metric,
-                y=annotation_key,
-                color='artefact',
-                box=False,
-                title=f'{qc_metric} of {object}'
-            )
-            fig.update_layout(width=800, height=2500, violinmode='overlay')
-            figures.append(fig)
-            fig.write_image(f"{figure_path}/split_violinplot_{qc_metric}_{object}.png", scale=3)
-            fig.write_image(f"{figure_path}/split_violinplot_{qc_metric}_{object}.pdf", scale=3)
+            if plots_enabled():
+                fig = px.violin(
+                    sdata['table'].obs,
+                    x=qc_metric,
+                    y=annotation_key,
+                    color='artefact',
+                    box=False,
+                    title=f'{qc_metric} of {object}'
+                )
+                fig.update_layout(width=800, height=2500, violinmode='overlay')
+                figures.append(fig)
+                fig.write_image(f"{figure_path}/split_violinplot_{qc_metric}_{object}.png", scale=3)
+                fig.write_image(f"{figure_path}/split_violinplot_{qc_metric}_{object}.pdf", scale=3)
 
         if ( object == 'cell' ):
             missions.hqcr.map_values_to_cells(sdata, polys, image_type, resolution, 
                                     mask_df[f'{suffix}_mask'], f'{suffix}_class', figure_path, 'markov_labels')
             
-            bar_plot_df_1 = (
-                sdata['table'].obs
-                .groupby(annotation_key)[f'{suffix}_class']
-                .apply(lambda x: (x == 1).sum())
-                .reset_index(name=f'num_class')
-            )
-            bar_plot_df_1['class'] = [modality] * len(bar_plot_df_1)
+            if plots_enabled():
+                bar_plot_df_1 = (
+                    sdata['table'].obs
+                    .groupby(annotation_key)[f'{suffix}_class']
+                    .apply(lambda x: (x == 1).sum())
+                    .reset_index(name=f'num_class')
+                )
+                bar_plot_df_1['class'] = [modality] * len(bar_plot_df_1)
 
-            bar_plot_df_2 = (
-                sdata['table'].obs
-                .groupby(annotation_key)[f'{suffix}_class']
-                .apply(lambda x: (x == 0).sum())
-                .reset_index(name=f'num_class')
-            )
-            bar_plot_df_2['class'] = [modality.replace('h','l')] * len(bar_plot_df_1)
+                bar_plot_df_2 = (
+                    sdata['table'].obs
+                    .groupby(annotation_key)[f'{suffix}_class']
+                    .apply(lambda x: (x == 0).sum())
+                    .reset_index(name=f'num_class')
+                )
+                bar_plot_df_2['class'] = [modality.replace('h','l')] * len(bar_plot_df_1)
 
-            bar_plot_df = pd.concat([bar_plot_df_1, bar_plot_df_2])
+                bar_plot_df = pd.concat([bar_plot_df_1, bar_plot_df_2])
 
-            # Bar plot of artefact scores
-            fig_bar = px.bar(
-                bar_plot_df,
-                x=f'num_class',
-                y=annotation_key,
-                color='class',
-                orientation='h',
-                title=f'Number of cells classified as {modality} per celltype'
-            )
-            fig_bar.update_layout(barmode="stack", height=2500)
-            figures.append(fig_bar)
-            fig_bar.write_image(f"{figure_path}/barplot_celltypes_{modality}.png", scale=3)
-            fig_bar.write_image(f"{figure_path}/barplot_celltypes_{modality}.pdf", scale=3)
+                # Bar plot of artefact scores
+                fig_bar = px.bar(
+                    bar_plot_df,
+                    x=f'num_class',
+                    y=annotation_key,
+                    color='class',
+                    orientation='h',
+                    title=f'Number of cells classified as {modality} per celltype'
+                )
+                fig_bar.update_layout(barmode="stack", height=2500)
+                figures.append(fig_bar)
+                fig_bar.write_image(f"{figure_path}/barplot_celltypes_{modality}.png", scale=3)
+                fig_bar.write_image(f"{figure_path}/barplot_celltypes_{modality}.pdf", scale=3)
 
-            bar_plot_pct = bar_plot_df.assign(
-                pct=100 * bar_plot_df["num_class"] / bar_plot_df.groupby(annotation_key)["num_class"].transform("sum")
-            )
-            bar_plot_pct["pct_rounded"] = bar_plot_pct["pct"].round(2)
+                bar_plot_pct = bar_plot_df.assign(
+                    pct=100 * bar_plot_df["num_class"] / bar_plot_df.groupby(annotation_key)["num_class"].transform("sum")
+                )
+                bar_plot_pct["pct_rounded"] = bar_plot_pct["pct"].round(2)
 
-            fig_pct = px.bar(
-                bar_plot_pct,
-                x="pct",
-                y=annotation_key,
-                color="class",
-                orientation="h",
-                title=f"Percentage of cells classified as {modality} per celltype",
-                text="pct_rounded"
-            )
+                fig_pct = px.bar(
+                    bar_plot_pct,
+                    x="pct",
+                    y=annotation_key,
+                    color="class",
+                    orientation="h",
+                    title=f"Percentage of cells classified as {modality} per celltype",
+                    text="pct_rounded"
+                )
 
-            fig_pct.update_layout(barmode="stack", xaxis_title="Percentage (%)", height=2500)
-            figures.append(fig_pct)
-            fig_pct.write_image(f"{figure_path}/barplot_celltypes_pct_{modality}.png", scale=3)
-            fig_pct.write_image(f"{figure_path}/barplot_celltypes_pct_{modality}.pdf", scale=3)
+                fig_pct.update_layout(barmode="stack", xaxis_title="Percentage (%)", height=2500)
+                figures.append(fig_pct)
+                fig_pct.write_image(f"{figure_path}/barplot_celltypes_pct_{modality}.png", scale=3)
+                fig_pct.write_image(f"{figure_path}/barplot_celltypes_pct_{modality}.pdf", scale=3)
 
 
-    # Generate plotly HTML
-    html_content = ''.join(fig.to_html(full_html=False) for fig in figures)
-    with open(f"{figure_path}/celltype_qc_analysis.html", "w") as f:
-        f.write(html_content)
+        # Generate plotly HTML
+        html_content = ''.join(fig.to_html(full_html=False) for fig in figures)
+        with open(f"{figure_path}/celltype_qc_analysis.html", "w") as f:
+            f.write(html_content)

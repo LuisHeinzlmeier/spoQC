@@ -1,3 +1,5 @@
+from spoqc.reporting import plots_only
+
 import numpy as np
 import time
 import matplotlib.pyplot as plt
@@ -141,6 +143,7 @@ def example_markov_field():
     plt.imshow(labels, cmap='gray')
     plt.colorbar()
 
+@plots_only
 def visualize_markov_calculation(average_cell_probability_image, labels, figure_path):
     plt.figure(figsize=(30, 5))
     plt.subplot(1, 3, 1)

@@ -1,3 +1,5 @@
+from spoqc.reporting import plots_enabled
+
 import numpy as np
 import plotly.express as px
 import geopandas as gpd
@@ -123,30 +125,31 @@ def _calc_convexity(sdata, figure_path):
     sdata['table'].obs['convexity_min_nuceli'] = min_convexity_metric_list
     sdata['table'].obs['convexity_nuclei'] = [True if x > 0.5 else False for x in min_convexity_metric_list]
 
-    plotcats = [['convexity_cell', 'convexity_metric_cell'], 
-                ['convexity_nuclei', 'convexity_mean_nuceli']]
+    if plots_enabled():
+        plotcats = [['convexity_cell', 'convexity_metric_cell'],
+                    ['convexity_nuclei', 'convexity_mean_nuceli']]
 
-    figures = []
-    for i, cat in enumerate(plotcats):
+        figures = []
+        for i, cat in enumerate(plotcats):
 
-        helperfuncs.plot_scatter(sdata['table'], figure_path, cat[0], None, 
-                                cat[0], ['black', 'lightblue'], None)
-        helperfuncs.plot_scatter_density(sdata['table'], figure_path, f'{cat[0]}_{cat[1]}', 
-                                         cat[0], cat[1], ['black', 'lightblue'], '' \
-                                         f'Density of {cat[1]}')
+            helperfuncs.plot_scatter(sdata['table'], figure_path, cat[0], None,
+                                    cat[0], ['black', 'lightblue'], None)
+            helperfuncs.plot_scatter_density(sdata['table'], figure_path, f'{cat[0]}_{cat[1]}',
+                                             cat[0], cat[1], ['black', 'lightblue'], '' \
+                                             f'Density of {cat[1]}')
         
-        fig = px.histogram(sdata['table'].obs, x=cat[1], nbins=100, width=800, height=800)
-        fig.update_layout(
-            title=f"Total distribution {cat[1]} for cells of all samples"
-        )
-        helperfuncs.apply_general_plotly_layout(fig, True)
-        figures.append(fig)
-        fig.write_image(f"{figure_path}/histogram_{cat[1]}.png", scale=3)
-        fig.write_image(f"{figure_path}/histogram_{cat[1]}.pdf", scale=3)
+            fig = px.histogram(sdata['table'].obs, x=cat[1], nbins=100, width=800, height=800)
+            fig.update_layout(
+                title=f"Total distribution {cat[1]} for cells of all samples"
+            )
+            helperfuncs.apply_general_plotly_layout(fig, True)
+            figures.append(fig)
+            fig.write_image(f"{figure_path}/histogram_{cat[1]}.png", scale=3)
+            fig.write_image(f"{figure_path}/histogram_{cat[1]}.pdf", scale=3)
 
-    with open(f'{figure_path}/convexity.html', 'w') as f:
-        for fig in figures:
-            f.write(fig.to_html(full_html=False, include_plotlyjs='cdn'))
+        with open(f'{figure_path}/convexity.html', 'w') as f:
+            for fig in figures:
+                f.write(fig.to_html(full_html=False, include_plotlyjs='cdn'))
 
 
 def init_metric(enterprise):
