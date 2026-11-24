@@ -18,3 +18,7 @@ perf/drop-pixel-parquet-index    # perf | exact | not sent | Drop the transport 
 perf/compact-pixel-score-masks   # perf | exact | not sent | Store binary pixel-score masks as int8
 perf/project-transcript-columns # perf | exact | not sent | Materialize only the transcript columns needed by AC and QV
 feat/no-plots                    # perf | exact | not sent | Skip figures and HTML with --no-plots; merge after the local Moran, HQTR plot reuse, density, refinement writer and Parquet index branches
+
+# Pending integration approval
+# perf/vectorize-convexity        # perf | exact | not sent | Compute polygon turn signs as arrays
+# perf/vectorize-bubble-geometry  # perf | exact | not sent | Compute polygon area and length in bulk; retain scalar thinness arithmetic
