@@ -161,7 +161,7 @@ def _calculate_local_moran_I_values(sdata, threads):
     #   all_I:   (n, num_genes) Moran's I per center cell and gene
     
     # Make sure dtypes match your all_ids / var_names
-    transcripts_df = sdata.points['transcripts'].compute()
+    transcripts_df = sdata.points['transcripts'][["x", "y", "cell_id", "feature_name"]].compute()
     transcripts_cell_id = transcripts_df["cell_id"].to_numpy()
     transcripts_feature = transcripts_df["feature_name"].to_numpy()
 
@@ -266,7 +266,7 @@ def _generate_transcript_ambient_density_image(
     xy_transcript_coords_df['morans_I'] = np.zeros(len(xy_transcript_coords_df))
 
     # Attach ambient score to transcript df.
-    features = np.array(sdata['transcripts'].compute()['feature_name'])
+    features = np.array(sdata['transcripts']['feature_name'].compute())
     global_ambient.index = [i for i in range(0, len(global_ambient))]
     global_ambient.loc[np.isnan(global_ambient['morans_I']),'morans_I'] = 0.0 # Sometimes you have nan for moran's I.
 
