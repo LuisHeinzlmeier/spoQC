@@ -71,7 +71,9 @@ def plot_hqcr(sdata, figure_path, min_number_good_cells_hqcr, minimum_number_of_
     hqcr_df.to_json(f"{figure_path}/hqcr.json", orient="columns")
 
 
-def generate_hqcr_html(figure_path, df_plot, cat, ncat, catnames, qc_metrics):
+def generate_hqcr_html(
+    figure_path, df_plot, cat, ncat, catnames, qc_metrics, *, write_static_images=True
+):
 
     figures = []
 
@@ -124,8 +126,9 @@ def generate_hqcr_html(figure_path, df_plot, cat, ncat, catnames, qc_metrics):
         helperfuncs.apply_general_plotly_layout(fig, True)
 
         figures.append(fig)
-        fig.write_image(f"{figure_path}/{plotname}_{level}.png", scale=3)
-        fig.write_image(f"{figure_path}/{plotname}_{level}.pdf", scale=3)
+        if write_static_images:
+            fig.write_image(f"{figure_path}/{plotname}_{level}.png", scale=3)
+            fig.write_image(f"{figure_path}/{plotname}_{level}.pdf", scale=3)
 
     with open(f'{figure_path}/hqcr_{cat}.html', 'w') as f:
         for fig in figures:

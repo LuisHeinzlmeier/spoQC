@@ -396,6 +396,7 @@ def start_exploration(enterprise, test_res=False):
             ncat,
             catnames,
             enterprise.hqcr_set.metrics,
+            write_static_images=False,
         )
 
         # Generate html for quality cell regions (bad, small and hqcrs)
@@ -409,6 +410,7 @@ def start_exploration(enterprise, test_res=False):
             ncat,
             catnames,
             enterprise.hqcr_set.metrics,
+            write_static_images=False,
         )
 
         # Generate html for just all the data
