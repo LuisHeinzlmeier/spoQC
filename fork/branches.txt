@@ -19,9 +19,10 @@ perf/compact-pixel-score-masks   # perf | exact | not sent | Store binary pixel-
 perf/project-transcript-columns # perf | exact | not sent | Materialize only the transcript columns needed by AC and QV
 feat/no-plots                    # perf | exact | not sent | Skip figures and HTML with --no-plots; merge after the local Moran, HQTR plot reuse, density, refinement writer and Parquet index branches
 
-# Pending integration approval
-# perf/vectorize-convexity        # perf | exact | not sent | Compute polygon turn signs as arrays
-# perf/vectorize-bubble-geometry  # perf | exact | not sent | Compute polygon area and length in bulk; retain scalar thinness arithmetic
-# perf/index-nucleus-centroids     # perf | exact | not sent | Find intersecting nucleus centroids with a spatial index and preserve row order
-# perf/project-doublet-transcripts # perf | exact | not sent | Read four transcript columns once for DoubletQC
-# perf/checkpoint-clustering-priors # perf | exact | not sent | Checkpoint pixel-score partitions to disk and bound clustering working memory
+perf/vectorize-convexity        # perf | exact | not sent | Compute polygon turn signs as arrays
+perf/vectorize-bubble-geometry  # perf | exact | not sent | Compute polygon area and length in bulk; retain scalar thinness arithmetic
+perf/index-nucleus-centroids     # perf | exact | not sent | Find intersecting nucleus centroids with a spatial index and preserve row order
+perf/project-doublet-transcripts # perf | exact | not sent | Read four transcript columns once for DoubletQC
+perf/checkpoint-clustering-priors # perf | exact | not sent | Checkpoint pixel-score partitions to disk and bound clustering working memory
+perf/hqcr-skip-unused-umap        # perf | exact | not sent | Skip the unused HQCR UMAP embedding
+perf/hqcr-skip-overwritten-figures # perf | exact | not sent | Write static HQCR metric images once and retain all HTML reports
