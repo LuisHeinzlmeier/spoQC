@@ -34,6 +34,7 @@ from matplotlib.colors import to_hex
 from matplotlib.patches import Patch
 from matplotlib.lines import Line2D
 from scipy.ndimage import gaussian_filter
+from scipy.spatial import cKDTree
 from scipy.stats import norm
 
 class Timer:
@@ -770,6 +771,17 @@ def points_within_radius(df: pd.DataFrame, radius: float, num: bool) -> List[Uni
         - If `num` is True, the element is the count of points within the radius.
         - If `num` is False, the element is a list of indices of points within the radius.
     """
+    if set(df.columns) == {"x", "y"} and len(df.columns) == 2 and df.index.is_unique and isinstance(radius, (int, float)):
+        coords = df[["x", "y"]].to_numpy()
+        dtype = coords.dtype
+        if (
+            dtype in (np.dtype("float32"), np.dtype("float64"))
+            and df["x"].dtype == df["y"].dtype == dtype
+            and 0 <= radius <= np.sqrt(np.finfo(dtype).max) / 4
+            and np.abs(coords).max(initial=0) <= np.sqrt(np.finfo(dtype).max) / 4
+        ):
+            return _indexed_points_within_radius(coords, df.index, radius, num)
+
     points_in_radius = []
     
     for i, point in df.iterrows():
@@ -788,6 +800,26 @@ def points_within_radius(df: pd.DataFrame, radius: float, num: bool) -> List[Uni
         else:
             points_in_radius.append(close_points)
     
+    return points_in_radius
+
+
+def _indexed_points_within_radius(coords, index, radius, num):
+    tree = cKDTree(coords)
+    # Search a wider square, then apply the original Euclidean test in the
+    # input dtype. This keeps the same points at floating-point boundaries.
+    query_radius = max(2 * radius, np.sqrt(np.finfo(coords.dtype).tiny))
+    points_in_radius = []
+    batch_size = 1024
+    for start in range(0, len(coords), batch_size):
+        candidates = tree.query_ball_point(
+            coords[start:start + batch_size], query_radius, p=np.inf, return_sorted=True,
+        )
+        for position, matches in enumerate(candidates, start):
+            matches = np.asarray(matches, dtype=np.intp)
+            delta = coords[matches] - coords[position]
+            distances = np.sqrt(delta[:, 0] ** 2 + delta[:, 1] ** 2)
+            neighbors = matches[(matches != position) & (distances <= radius)]
+            points_in_radius.append(len(neighbors) if num else index.take(neighbors).tolist())
     return points_in_radius
 
 
