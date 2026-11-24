@@ -49,16 +49,15 @@ def _calc_bubble_score(sdata: Dict[str, Any], figure_path: str, bubble_key: str)
 
     DPI = 300
 
-    cellboundaries = sdata[bubble_key]
-
     n_obs = sdata['table'].n_obs
-    thinness_scores = [-1] * n_obs
-    areas = [-1] * n_obs
-
-    for i in range(0, n_obs):
-        areas[i] = cellboundaries.iloc[i][0].area
-        circumference = cellboundaries.iloc[i][0].length
-        thinness_scores[i] = ( 4*np.pi*areas[i] ) / ((circumference) ** 2)
+    geometries = sdata[bubble_key].geometry.iloc[:n_obs]
+    areas = geometries.area.tolist()
+    circumferences = geometries.length.tolist()
+    # Use the same scalar power operation for the thinness ratio.
+    thinness_scores = [
+        (4 * np.pi * area) / (circumference ** 2)
+        for area, circumference in zip(areas, circumferences, strict=True)
+    ]
 
     if plots_enabled():
         df = pd.DataFrame({
