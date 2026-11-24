@@ -1,3 +1,5 @@
+from spoqc.reporting import plots_enabled
+
 import numpy as np
 import cv2
 import os
@@ -67,17 +69,18 @@ def _pixel_relevance(
 
     print("[NOTE] Plotting")
     timer.start()
-    helperfuncs.plot_pixels(
-        figure_path,
-        relevance_map_image,
-        imagedim,
-        'relevance', 
-        'Pixel Relevance', 
-        'hot',
-        False,
-        True,
-        legend_dict={"high rel.": "#FFFFFF", "low rel.": "#000000"}
-    )
+    if plots_enabled():
+        helperfuncs.plot_pixels(
+            figure_path,
+            relevance_map_image,
+            imagedim,
+            'relevance',
+            'Pixel Relevance',
+            'hot',
+            False,
+            True,
+            legend_dict={"high rel.": "#FFFFFF", "low rel.": "#000000"}
+        )
     timer.stop()
 
     helperfuncs.nparr_to_parquet(relevance_map_image.flatten(), name, spoqc_tmp_folder, tmp_suffix)

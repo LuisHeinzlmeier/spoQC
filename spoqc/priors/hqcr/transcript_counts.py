@@ -1,3 +1,5 @@
+from spoqc.reporting import plots_enabled
+
 import pandas as pd
 import numpy as np
 
@@ -78,14 +80,15 @@ def _calc_counts_probs(sdata, figure_path, cell_df, qc_domains_adata, counts, th
         bad_cluster = 0
         t = thres_counts
 
-    helperfuncs.plot_histogram_for_array(
-        cell_df[counts],
-        100,
-        figure_path,
-        f"{counts}: t={np.round(t, 3)} with {0} x {np.round(0.0, 3)} std",
-        f"{counts}_prior",
-        t=t
-    )
+    if plots_enabled():
+        helperfuncs.plot_histogram_for_array(
+            cell_df[counts],
+            100,
+            figure_path,
+            f"{counts}: t={np.round(t, 3)} with {0} x {np.round(0.0, 3)} std",
+            f"{counts}_prior",
+            t=t
+        )
 
     # For each cell calculate the bad quality probability, which is basically the poportion of 
     # all the cells in a distance beloning to the bad quality cluster.

@@ -1,7 +1,10 @@
+from spoqc.reporting import plots_only
+
 import matplotlib.pyplot as plt
 
 from .. import helperfuncs
 
+@plots_only
 def start_exploration(enterprise, flip=True):
     if ( enterprise.args.step in ['all', 'unittest', 'generalqc'] ):
         print('[NOTE] Check images')

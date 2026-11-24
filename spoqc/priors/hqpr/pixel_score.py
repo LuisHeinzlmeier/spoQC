@@ -1,3 +1,5 @@
+from spoqc.reporting import plots_enabled
+
 import dask
 import dask.dataframe as dd
 import dask.array as da
@@ -120,7 +122,7 @@ def _calc_pixel_score(
     # Generate plots to investigate individual pixel clusters.
     # cluster_array is only needed for plotting, so skip materializing it (and the loop
     # below) entirely when plot_all_pixel_clusters is False.
-    if ( plot_all_pixel_clusters ):
+    if plot_all_pixel_clusters and plots_enabled():
         timer.start()
         print("[NOTE] Generate pixel cluster plots")
         cluster_array = image_ddf['cluster'].compute().to_numpy()
@@ -137,16 +139,17 @@ def _calc_pixel_score(
             title = title + f' with pixel_score {pixel_score:.2f} s_core {s_score:.2f} and as_score {as_score:.2f}'
 
             # Check the sturucture of those pixel clusters.
-            helperfuncs.plot_pixels(
-                figure_path,
-                np.array(cluster_selection).reshape(dim_x, dim_y),
-                imagedim,
-                'clusters',
-                title,
-                'gray',
-                False,
-                True
-            )
+            if plots_enabled():
+                helperfuncs.plot_pixels(
+                    figure_path,
+                    np.array(cluster_selection).reshape(dim_x, dim_y),
+                    imagedim,
+                    'clusters',
+                    title,
+                    'gray',
+                    False,
+                    True
+                )
         timer.stop()
 
     print("[NOTE] Pixel scoring calculation took:")
@@ -181,16 +184,17 @@ def _calc_probs_pixel_score(pixel_scores, figure_path, gmm_mod=3, nstds=1, t=Non
 
     print(f'Using std {max_std} and mean {max_mean} for pixel prior')
 
-    helperfuncs.plot_histogram_for_array(
-        pixel_scores,
-        100,
-        figure_path,
-        f"Pixel scores: t={np.round(max_mean, 3)} with {nstds} x {np.round(max_std, 3)} std",
-        "pixel_scores_prior",
-        t=max_mean,
-        std=max_std,
-        nstds=nstds,
-    )
+    if plots_enabled():
+        helperfuncs.plot_histogram_for_array(
+            pixel_scores,
+            100,
+            figure_path,
+            f"Pixel scores: t={np.round(max_mean, 3)} with {nstds} x {np.round(max_std, 3)} std",
+            "pixel_scores_prior",
+            t=max_mean,
+            std=max_std,
+            nstds=nstds,
+        )
 
     # Calculate the probability density at x for each pixel clusters.
     return norm.pdf(pixel_scores, loc=max_mean, scale=nstds*max_std)
@@ -369,16 +373,17 @@ def _calc_pixel_score_prior(
     image_ddf = image_ddf.persist()
     timer.stop()
 
-    helperfuncs.plot_pixels(
-        figure_path,
-        image_ddf[f'prob_{col}'].compute().to_numpy().reshape(dim_x, dim_y),
-        imagedim,
-        'prob_pixel_score',
-        'Pixel score probability', 
-        'hot',
-        False,
-        False
-    )
+    if plots_enabled():
+        helperfuncs.plot_pixels(
+            figure_path,
+            image_ddf[f'prob_{col}'].compute().to_numpy().reshape(dim_x, dim_y),
+            imagedim,
+            'prob_pixel_score',
+            'Pixel score probability',
+            'hot',
+            False,
+            False
+        )
     timer_all.stop()
 
     return image_ddf

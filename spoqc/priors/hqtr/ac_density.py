@@ -1,3 +1,5 @@
+from spoqc.reporting import plots_enabled
+
 import numpy as np
 import pandas as pd
 import dask.dataframe as dd
@@ -67,27 +69,29 @@ def _calc_prior(
 
     image_ddf = image_ddf.assign(**{f"prob_{col}": scaled_series})
 
-    helperfuncs.plot_histogram_for_array(
-        image_ddf[f"prob_{col}"].compute().to_numpy(),
-        100,
-        figure_path,
-        f"{col}: t={np.round(thresh, 3)} with {1} x {np.round(std, 3)} std",
-        f"prob_ac_density",
-        t=thresh,
-        std=std,
-        nstds=1,
-    )
+    if plots_enabled():
+        plot_probabilities = image_ddf[f"prob_{col}"].compute().to_numpy()
+        helperfuncs.plot_histogram_for_array(
+            plot_probabilities,
+            100,
+            figure_path,
+            f"{col}: t={np.round(thresh, 3)} with {1} x {np.round(std, 3)} std",
+            f"prob_ac_density",
+            t=thresh,
+            std=std,
+            nstds=1,
+        )
 
-    helperfuncs.plot_pixels(
-        figure_path,
-        image_ddf[f"prob_{col}"].compute().to_numpy().reshape(dim_x, dim_y),
-        imagedim,
-        'prob_ac_density',
-        'Probability of AC Density Pixel', 
-        'hot',
-        False,
-        False
-    )
+        helperfuncs.plot_pixels(
+            figure_path,
+            plot_probabilities.reshape(dim_x, dim_y),
+            imagedim,
+            'prob_ac_density',
+            'Probability of AC Density Pixel',
+            'hot',
+            False,
+            False
+        )
 
     return image_ddf
 

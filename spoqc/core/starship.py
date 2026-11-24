@@ -1,3 +1,5 @@
+from spoqc.reporting import plots_only
+
 import os
 import sys
 import pkgutil
@@ -93,6 +95,7 @@ class Enterpise:
         print("[finish]")
 
         
+    @plots_only
     def _data_loading_plots(self):
         print("[NOTE] Plot some data loading plots")
 

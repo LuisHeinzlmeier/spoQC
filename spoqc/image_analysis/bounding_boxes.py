@@ -1,3 +1,5 @@
+from spoqc.reporting import plots_enabled, plots_only
+
 import numpy as np
 import dask.dataframe as dd
 import matplotlib.pyplot as plt
@@ -41,6 +43,7 @@ def _merge_overlapping_boxes(boxes):
         boxes = new_boxes
     return boxes
 
+@plots_only
 def _boudning_box_plot(bounding_boxes, figure_path, prefix, image, imagedim, flip = False):
     plt.figure(figsize=(12, 6))
 
@@ -141,25 +144,26 @@ def define_bounding_boxes(
     structuring_element = disk(dilation_radius)
     dilated_image = dilation(binary_image, structuring_element)
 
-    plt.figure(figsize=(12, 6))
-    if ( flip ):
-        plt.imshow(
-            np.flipud( dilated_image ),
-            cmap='gray',
-            extent=[imagedim.bb_xmin, imagedim.bb_xmax, imagedim.bb_ymin, imagedim.bb_ymax],
-            aspect='equal'
-        )
-    else:
-        plt.imshow(
-            dilated_image,
-            cmap='gray',
-            extent=[imagedim.bb_xmin, imagedim.bb_xmax, imagedim.bb_ymin, imagedim.bb_ymax],
-            aspect='equal'
-        )
-    plt.title(f"Dilated image")
-    plt.savefig(f'{figure_path}/imageplot_dilated_image_for_bounding_box.png', bbox_inches='tight', dpi=300)
-    plt.savefig(f'{figure_path}/imageplot_dilated_image_for_bounding_box.pdf', bbox_inches='tight', dpi=300)
-    plt.close()
+    if plots_enabled():
+        plt.figure(figsize=(12, 6))
+        if ( flip ):
+            plt.imshow(
+                np.flipud( dilated_image ),
+                cmap='gray',
+                extent=[imagedim.bb_xmin, imagedim.bb_xmax, imagedim.bb_ymin, imagedim.bb_ymax],
+                aspect='equal'
+            )
+        else:
+            plt.imshow(
+                dilated_image,
+                cmap='gray',
+                extent=[imagedim.bb_xmin, imagedim.bb_xmax, imagedim.bb_ymin, imagedim.bb_ymax],
+                aspect='equal'
+            )
+        plt.title(f"Dilated image")
+        plt.savefig(f'{figure_path}/imageplot_dilated_image_for_bounding_box.png', bbox_inches='tight', dpi=300)
+        plt.savefig(f'{figure_path}/imageplot_dilated_image_for_bounding_box.pdf', bbox_inches='tight', dpi=300)
+        plt.close()
 
 
     # Label connected components in the dilated binary image
@@ -182,28 +186,30 @@ def define_bounding_boxes(
             subfigures.append(subfigure)
             bounding_boxes.append([min_row, min_col, max_row, max_col])
             subfigure_imagedim = core._data.ImageDimStruct(min_row, min_col, max_row, max_col)
-            helperfuncs.plot_pixels(
-                f'{figure_path}/subfigures/',
-                subfigure,
-                subfigure_imagedim,
-                f'subfigure{idx+1}',
-                f'Log10p1 Subfigure {idx+1}', 
-                'gray',
-                True,
-                True
-            )
+            if plots_enabled():
+                helperfuncs.plot_pixels(
+                    f'{figure_path}/subfigures/',
+                    subfigure,
+                    subfigure_imagedim,
+                    f'subfigure{idx+1}',
+                    f'Log10p1 Subfigure {idx+1}',
+                    'gray',
+                    True,
+                    True
+                )
             idx += 1
 
-    helperfuncs.plot_pixels(
-        f'{figure_path}/subfigures/',
-        image,
-        imagedim,
-        f'subfigure{idx+1}', 
-        f'Log10p1 Subfigure {idx+1}', 
-        'gray',
-        True,
-        False
-    )
+    if plots_enabled():
+        helperfuncs.plot_pixels(
+            f'{figure_path}/subfigures/',
+            image,
+            imagedim,
+            f'subfigure{idx+1}',
+            f'Log10p1 Subfigure {idx+1}',
+            'gray',
+            True,
+            False
+        )
 
     # Correct the coordinates of the bounding box
     for i, box in enumerate(bounding_boxes):
