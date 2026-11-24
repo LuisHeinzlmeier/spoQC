@@ -17,3 +17,4 @@ perf/chunked-refinement-output  # perf | exact | not sent | Build refinement out
 perf/drop-pixel-parquet-index    # perf | exact | not sent | Drop the transport index from raw and refined pixel masks
 perf/compact-pixel-score-masks   # perf | exact | not sent | Store binary pixel-score masks as int8
 perf/project-transcript-columns # perf | exact | not sent | Materialize only the transcript columns needed by AC and QV
+feat/no-plots                    # perf | exact | not sent | Skip figures and HTML with --no-plots; merge after the local Moran, HQTR plot reuse, density, refinement writer and Parquet index branches
