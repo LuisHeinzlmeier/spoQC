@@ -46,26 +46,40 @@ def start_pixel_mask_refinement(
         normalize='total'
     )
 
+    labels = labels[:]
     hqr.markov_random_field_zarr_parallel.visualize_markov_calculation(
         beliefs_raw.reshape((dim_x, dim_y)),
-        labels[:],
+        labels,
         figure_path
     )
 
     #  Write out masks.
     print(f"[NOTE] Write out {suffix} masks")
 
-    # Build the output from fully in-memory arrays and hand it to dask via from_pandas so the resulting ddf has known,
-    # sorted divisions. Pairing a freshly chunked dask.array against image_ddf.index (unknown divisions, from a parquet
-    # read) preserves index-to-value association but not the physical row order returned by .compute()/round-tripped 
-    # through parquet.
-    out_df = pd.DataFrame({
+    columns = {
         f"{suffix}_beliefs": beliefs_raw,
-        f"{suffix}_beliefs_smoothed": beliefs[:].flatten(),
-        f"{suffix}_mask_smoothed": labels[:].flatten(),
-    })
-    n_partitions = max(1, -(-len(out_df) // chunk_size))
-    image_ddf = dd.from_pandas(out_df, npartitions=n_partitions)
+        f"{suffix}_beliefs_smoothed": beliefs.ravel(),
+        f"{suffix}_mask_smoothed": labels.ravel(),
+    }
+    n_rows = len(beliefs_raw)
+    n_partitions = max(1, -(-n_rows // chunk_size))
+    rows_per_partition = -(-n_rows // n_partitions)
+    offsets = (*range(0, n_rows, rows_per_partition), n_rows)
+
+    def partition(bounds):
+        start, stop = bounds
+        return pd.DataFrame(
+            {name: values[start:stop] for name, values in columns.items()},
+            index=pd.RangeIndex(start, stop),
+            copy=False,
+        )
+
+    # Build only the partition being written, with a global row index so the
+    # physical pixel order survives the Parquet round trip.
+    image_ddf = dd.from_map(
+        partition, list(zip(offsets, offsets[1:])),
+        meta=partition((0, 0)), divisions=(*offsets[:-1], n_rows - 1),
+    )
 
     helperfuncs.ddf_to_parquet(image_ddf, f'mask_smoothed_{prefix}', spoqc_tmp_folder, [], suffix)
 
