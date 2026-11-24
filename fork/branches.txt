@@ -26,3 +26,5 @@ perf/project-doublet-transcripts # perf | exact | not sent | Read four transcrip
 perf/checkpoint-clustering-priors # perf | exact | not sent | Checkpoint pixel-score partitions to disk and bound clustering working memory
 perf/hqcr-skip-unused-umap        # perf | exact | not sent | Skip the unused HQCR UMAP embedding
 perf/hqcr-skip-overwritten-figures # perf | exact | not sent | Write static HQCR metric images once and retain all HTML reports
+
+perf/doublet-slurm-workers       # perf | exact on Skin_A2 | not sent | Set ovrlpy workers from allocated Slurm task CPUs
