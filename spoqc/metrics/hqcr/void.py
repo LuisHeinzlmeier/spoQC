@@ -1,3 +1,5 @@
+from spoqc.reporting import plots_enabled
+
 import numpy as np
 import scipy.spatial as spatial
 import matplotlib.pyplot as plt
@@ -120,7 +122,7 @@ def _calc_void(
 
     # Just for testing
     # Draw the graph
-    if ( debug ):
+    if debug and plots_enabled():
         print("[NOTE] Draw graph")
         plt.figure(figsize=(6, 6))
         pos = nx.spring_layout(traingular_graph, seed=42)  # Layout for visualization
@@ -146,23 +148,24 @@ def _calc_void(
     ###########################
     #### Check Edge length ####
     ###########################
-    # Check the distribution of the edge length to verify the threholds for the tirangular cluster graph.
-    figures = []
+    if plots_enabled():
+        # Check the distribution of the edge length to verify the threholds for the tirangular cluster graph.
+        figures = []
 
-    fig = px.box(x=edge_length_list, width=800, height=800)
-    fig.update_layout(
-        title=f"Total distribution of edge lengths"
-    )
+        fig = px.box(x=edge_length_list, width=800, height=800)
+        fig.update_layout(
+            title=f"Total distribution of edge lengths"
+        )
 
-    helperfuncs.apply_general_plotly_layout(fig, True)
+        helperfuncs.apply_general_plotly_layout(fig, True)
 
-    figures.append(fig)
-    fig.write_image(f"{figure_path}/boxplot_edge_lengths.png", scale=3)
-    fig.write_image(f"{figure_path}/boxplot_edge_lengths.pdf", scale=3)
+        figures.append(fig)
+        fig.write_image(f"{figure_path}/boxplot_edge_lengths.png", scale=3)
+        fig.write_image(f"{figure_path}/boxplot_edge_lengths.pdf", scale=3)
 
-    with open(f'{figure_path}/void.html', 'w') as f:
-        for fig in figures:
-            f.write(fig.to_html(full_html=False, include_plotlyjs='cdn'))
+        with open(f'{figure_path}/void.html', 'w') as f:
+            for fig in figures:
+                f.write(fig.to_html(full_html=False, include_plotlyjs='cdn'))
 
     ##################################
     #### Find triangular clusters ####
@@ -208,36 +211,37 @@ def _calc_void(
 
     timer.stop()
 
-    ########################
-    #### Plot triangles ####
-    ########################
-    print("[NOTE] Plot triangles")
-    timer.start()
+    if plots_enabled():
+        ########################
+        #### Plot triangles ####
+        ########################
+        print("[NOTE] Plot triangles")
+        timer.start()
 
-    # Create a PolyCollection
-    triangles_plotting = [points[simplex] for simplex in triangles]
-    collection = PolyCollection(
-        triangles_plotting,
-        facecolors=triangular_cluster_colors,
-        edgecolors="gray",
-        alpha=0.8,
-        linewidths=0
-    )
+        # Create a PolyCollection
+        triangles_plotting = [points[simplex] for simplex in triangles]
+        collection = PolyCollection(
+            triangles_plotting,
+            facecolors=triangular_cluster_colors,
+            edgecolors="gray",
+            alpha=0.8,
+            linewidths=0
+        )
 
-    # Plot all triangles colored by each clsuter id unless they are not associated with a cluster, then they are
-    # just gray.
-    fig, ax = plt.subplots(figsize=(8, 8))
-    ax.add_collection(collection)
-    ax.scatter(points[:, 0], points[:, 1], c="blue", marker="o", label="Points", s=0.01)
-    if ( flip ):
-        ax.invert_yaxis()
-    ax.set_title("Largest Enclosed Empty Patches")
-    ax.set_aspect('equal', adjustable='box')
-    plt.savefig(f'{figure_path}/spatial_traingle_all_clsuters.png', bbox_inches='tight', dpi=300)
-    plt.savefig(f'{figure_path}/spatial_traingle_all_clsuters.pdf', bbox_inches='tight', dpi=300)
-    plt.close()
+        # Plot all triangles colored by each clsuter id unless they are not associated with a cluster, then they are
+        # just gray.
+        fig, ax = plt.subplots(figsize=(8, 8))
+        ax.add_collection(collection)
+        ax.scatter(points[:, 0], points[:, 1], c="blue", marker="o", label="Points", s=0.01)
+        if ( flip ):
+            ax.invert_yaxis()
+        ax.set_title("Largest Enclosed Empty Patches")
+        ax.set_aspect('equal', adjustable='box')
+        plt.savefig(f'{figure_path}/spatial_traingle_all_clsuters.png', bbox_inches='tight', dpi=300)
+        plt.savefig(f'{figure_path}/spatial_traingle_all_clsuters.pdf', bbox_inches='tight', dpi=300)
+        plt.close()
 
-    timer.stop()
+        timer.stop()
 
     ####################################
     #### Triangle cluster filtering ####
@@ -252,54 +256,55 @@ def _calc_void(
     triangles_df.loc[triangle_filter, 'triangular_cluster_ids'] = -1
     triangular_cluster_ids = list(triangles_df['triangular_cluster_ids'])
 
-    # Make a plot with triangle clsuter numbers and without.
-    for with_numbers in [True, False]:
+    if plots_enabled():
+        # Make a plot with triangle clsuter numbers and without.
+        for with_numbers in [True, False]:
 
-        collection = PolyCollection(
-            triangles_plotting,
-            facecolors=triangular_cluster_colors,
-            edgecolors="gray",
-            alpha=0.8,
-            linewidths=0.5  # optional: thinner edges to speed up even more
-        )
+            collection = PolyCollection(
+                triangles_plotting,
+                facecolors=triangular_cluster_colors,
+                edgecolors="gray",
+                alpha=0.8,
+                linewidths=0.5  # optional: thinner edges to speed up even more
+            )
 
-        fig, ax = plt.subplots(figsize=(8, 8))
-        ax.add_collection(collection)
+            fig, ax = plt.subplots(figsize=(8, 8))
+            ax.add_collection(collection)
 
-        # Plot each triangle with the corresponding color
-        id_list = []
-        for simplex, id in zip(triangles, triangular_cluster_ids):
-            if ( id != -1 and with_numbers and id not in id_list):
-                triangle = points[simplex]
-                centroid = np.mean(triangle, axis=0) # Compute centroid of the triangle
-                ax.text(
-                    centroid[0],
-                    centroid[1],
-                    str(id),
-                    color="black",
-                    fontsize=5,
-                    ha="center",
-                    va="center",
-                    fontweight="bold"
-                )
-                id_list.append(id)
+            # Plot each triangle with the corresponding color
+            id_list = []
+            for simplex, id in zip(triangles, triangular_cluster_ids):
+                if ( id != -1 and with_numbers and id not in id_list):
+                    triangle = points[simplex]
+                    centroid = np.mean(triangle, axis=0) # Compute centroid of the triangle
+                    ax.text(
+                        centroid[0],
+                        centroid[1],
+                        str(id),
+                        color="black",
+                        fontsize=5,
+                        ha="center",
+                        va="center",
+                        fontweight="bold"
+                    )
+                    id_list.append(id)
 
-        ax.scatter(points[:, 0], points[:, 1], c="blue", marker="o", label="Points", s=0.01)
-        if ( flip ):
-            plt.gca().invert_yaxis()
-        ax.set_aspect('equal', adjustable='box')
-        plt.title("Largest Enclosed Empty Patches")
-        plt.savefig(
-            f'{figure_path}/spatial_traingle_filtered_clusters_{with_numbers}.png',
-            bbox_inches='tight',
-            dpi=300
-        )
-        plt.savefig(
-            f'{figure_path}/spatial_traingle_filtered_clusters_{with_numbers}.pdf',
-            bbox_inches='tight',
-            dpi=300
-        )
-        plt.close()
+            ax.scatter(points[:, 0], points[:, 1], c="blue", marker="o", label="Points", s=0.01)
+            if ( flip ):
+                plt.gca().invert_yaxis()
+            ax.set_aspect('equal', adjustable='box')
+            plt.title("Largest Enclosed Empty Patches")
+            plt.savefig(
+                f'{figure_path}/spatial_traingle_filtered_clusters_{with_numbers}.png',
+                bbox_inches='tight',
+                dpi=300
+            )
+            plt.savefig(
+                f'{figure_path}/spatial_traingle_filtered_clusters_{with_numbers}.pdf',
+                bbox_inches='tight',
+                dpi=300
+            )
+            plt.close()
     
     timer.stop()
 
@@ -446,20 +451,21 @@ def _calc_void(
         for contaminant in contaminant_list:
             triangle_cluster_df[f'transcripts_counts_{contaminant}'] = contaminants_dict[contaminant]
 
-    # Create the bar plot
-    cats_to_check = list(triangle_cluster_df.columns)
-    cats_to_check.remove('triangular_cluster_ids')
-    for y in cats_to_check:
-        plt.figure(figsize=(8, 6))
-        sns.barplot(triangle_cluster_df, x="triangular_cluster_ids", y=y, palette=colors)
+    if plots_enabled():
+        # Create the bar plot
+        cats_to_check = list(triangle_cluster_df.columns)
+        cats_to_check.remove('triangular_cluster_ids')
+        for y in cats_to_check:
+            plt.figure(figsize=(8, 6))
+            sns.barplot(triangle_cluster_df, x="triangular_cluster_ids", y=y, palette=colors)
 
-        # Add title and labels
-        plt.xlabel("Void number")
-        plt.ylabel(y)
+            # Add title and labels
+            plt.xlabel("Void number")
+            plt.ylabel(y)
 
-        plt.savefig(f'{figure_path}/barplot_void_{y}.png', bbox_inches='tight', dpi=300)
-        plt.savefig(f'{figure_path}/barplot_void_{y}.pdf', bbox_inches='tight', dpi=300)
-        plt.close()
+            plt.savefig(f'{figure_path}/barplot_void_{y}.png', bbox_inches='tight', dpi=300)
+            plt.savefig(f'{figure_path}/barplot_void_{y}.pdf', bbox_inches='tight', dpi=300)
+            plt.close()
 
     #################################################
     #### Triangle cluster counting (convex hull) ####
@@ -514,61 +520,62 @@ def _calc_void(
 
     # sdata['table'].obs['convexhull_all_trnascripts'] = convexhull_all_transcripts
 
-    ####################
-    #### More plots ####
-    ####################
-    print("[NOTE] More triangular plots")
-    timer.start()
-    for cat in cats_to_check:
+    if plots_enabled():
+        ####################
+        #### More plots ####
+        ####################
+        print("[NOTE] More triangular plots")
+        timer.start()
+        for cat in cats_to_check:
 
-        if ( len(triangle_cluster_df[cat]) != 0 ):
+            if ( len(triangle_cluster_df[cat]) != 0 ):
 
-            triangle_cluster_df[f'triangular_cluster_colors_{cat}'] = helperfuncs.values_to_hex_gradient(
-                                                                                                triangle_cluster_df[cat], 
-                                                                                                'hot', 
-                                                                                                reverse=True
-                                                                                            )
+                triangle_cluster_df[f'triangular_cluster_colors_{cat}'] = helperfuncs.values_to_hex_gradient(
+                                                                                                    triangle_cluster_df[cat],
+                                                                                                    'hot',
+                                                                                                    reverse=True
+                                                                                                )
 
-            # Apply the map
-            triangles_df[f'triangular_cluster_colors_{cat}'] = ['#FFFFFF'] * num_triangles
+                # Apply the map
+                triangles_df[f'triangular_cluster_colors_{cat}'] = ['#FFFFFF'] * num_triangles
             
-            for cluster_id in triangle_cluster_df['triangular_cluster_ids']:
-                mask_triangles = triangles_df['triangular_cluster_ids'] == cluster_id
-                mask_triangle_clusters = triangle_cluster_df['triangular_cluster_ids'] == cluster_id
-                triangles_df.loc[mask_triangles, f'triangular_cluster_colors_{cat}'] = list(triangle_cluster_df.loc[mask_triangle_clusters, f'triangular_cluster_colors_{cat}'])[0]
+                for cluster_id in triangle_cluster_df['triangular_cluster_ids']:
+                    mask_triangles = triangles_df['triangular_cluster_ids'] == cluster_id
+                    mask_triangle_clusters = triangle_cluster_df['triangular_cluster_ids'] == cluster_id
+                    triangles_df.loc[mask_triangles, f'triangular_cluster_colors_{cat}'] = list(triangle_cluster_df.loc[mask_triangle_clusters, f'triangular_cluster_colors_{cat}'])[0]
 
-            triangles_df.loc[triangle_filter, f'triangular_cluster_colors_{cat}'] = '#FFFFFF'
+                triangles_df.loc[triangle_filter, f'triangular_cluster_colors_{cat}'] = '#FFFFFF'
 
-            fig, ax = plt.subplots(figsize=(8, 8))
-            triangles_plotting = [points[simplex] for simplex in triangles]
+                fig, ax = plt.subplots(figsize=(8, 8))
+                triangles_plotting = [points[simplex] for simplex in triangles]
 
-            collection = PolyCollection(
-                triangles_plotting,
-                facecolors=triangles_df[f'triangular_cluster_colors_{cat}'],
-                edgecolors="gray",
-                alpha=0.8,
-                linewidths=0
-            )
+                collection = PolyCollection(
+                    triangles_plotting,
+                    facecolors=triangles_df[f'triangular_cluster_colors_{cat}'],
+                    edgecolors="gray",
+                    alpha=0.8,
+                    linewidths=0
+                )
 
-            ax.add_collection(collection)
-            ax.scatter(points[:, 0], points[:, 1], c="blue", marker="o", label="Points", s=0.01)
-            if ( flip ):
-                ax.invert_yaxis()
-            ax.set_title(f"{cat}")
-            ax.set_aspect('equal', adjustable='box')
+                ax.add_collection(collection)
+                ax.scatter(points[:, 0], points[:, 1], c="blue", marker="o", label="Points", s=0.01)
+                if ( flip ):
+                    ax.invert_yaxis()
+                ax.set_title(f"{cat}")
+                ax.set_aspect('equal', adjustable='box')
 
-            vmin = triangle_cluster_df[cat].min()
-            vmax = triangle_cluster_df[cat].max()
-            sm = plt.cm.ScalarMappable(cmap=plt.cm.hot_r, norm=plt.Normalize(vmin=vmin, vmax=vmax))
-            sm.set_array([])
-            plt.colorbar(sm, ax=ax, label=cat)
+                vmin = triangle_cluster_df[cat].min()
+                vmax = triangle_cluster_df[cat].max()
+                sm = plt.cm.ScalarMappable(cmap=plt.cm.hot_r, norm=plt.Normalize(vmin=vmin, vmax=vmax))
+                sm.set_array([])
+                plt.colorbar(sm, ax=ax, label=cat)
 
-            plt.savefig(f'{figure_path}/spatial_traingle_all_clsuters_{cat}.png', bbox_inches='tight', dpi=300)
-            plt.savefig(f'{figure_path}/spatial_traingle_all_clsuters_{cat}.pdf', bbox_inches='tight', dpi=300)
-            plt.close()
+                plt.savefig(f'{figure_path}/spatial_traingle_all_clsuters_{cat}.png', bbox_inches='tight', dpi=300)
+                plt.savefig(f'{figure_path}/spatial_traingle_all_clsuters_{cat}.pdf', bbox_inches='tight', dpi=300)
+                plt.close()
 
-        else:
-            print("[WARN] spoQC couldnt define any triangle and thus no plots are given for void QC.")
+            else:
+                print("[WARN] spoQC couldnt define any triangle and thus no plots are given for void QC.")
 
     print("[NOTE] Void QC done!")
     timer.stop()

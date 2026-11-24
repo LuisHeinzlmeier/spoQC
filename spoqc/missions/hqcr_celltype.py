@@ -1,3 +1,5 @@
+from spoqc.reporting import plots_enabled
+
 import pandas as pd
 import numpy as np
 import plotly.express as px
@@ -104,90 +106,93 @@ def celltype_artefact_analysis_for_hqcr(sdata, figure_path, cell_df, annotation_
                 threshold_right_dict[qc_metric] = thresholds_right
                 threshold_right_dict['celltypes'] = celltypes
 
-                fig = px.violin(
-                    cell_df,
-                    x=qc_metric,
-                    y=annotation_key,
-                    color='artefact',
-                    box=False,
-                    title=f'Multiplet and nucleus free cell disbtributions for {qc_metric}',
-                    color_discrete_map={
-                        'doublet': 'red',
-                        'nucleus_free': 'orange',
-                        'cell': 'blue'
-                    }
-                )
-                fig.add_trace(
-                    go.Scatter(
-                        y=celltypes,
-                        x=thresholds_left,
-                        mode='markers',
-                        marker=dict(color='red', size=10, symbol='line-ns', line=dict(width=2, color='red')),
-                        name='Left Threshold'
+                if plots_enabled():
+                    fig = px.violin(
+                        cell_df,
+                        x=qc_metric,
+                        y=annotation_key,
+                        color='artefact',
+                        box=False,
+                        title=f'Multiplet and nucleus free cell disbtributions for {qc_metric}',
+                        color_discrete_map={
+                            'doublet': 'red',
+                            'nucleus_free': 'orange',
+                            'cell': 'blue'
+                        }
                     )
-                )
-                fig.add_trace(
-                    go.Scatter(
-                        y=celltypes,
-                        x=thresholds_right,
-                        mode='markers',
-                        marker=dict(color='blue', size=10, symbol='line-ns', line=dict(width=2, color='blue')),
-                        name='Right Threshold'
+                    fig.add_trace(
+                        go.Scatter(
+                            y=celltypes,
+                            x=thresholds_left,
+                            mode='markers',
+                            marker=dict(color='red', size=10, symbol='line-ns', line=dict(width=2, color='red')),
+                            name='Left Threshold'
+                        )
                     )
-                )
-                fig.update_layout(width=800, height=2500, violinmode='overlay')
-                figures.append(fig)
-                fig.write_image(f"{figure_path}/split_violinplot_{qc_metric}.png", scale=3)
-                fig.write_image(f"{figure_path}/split_violinplot_{qc_metric}.pdf", scale=3)
+                    fig.add_trace(
+                        go.Scatter(
+                            y=celltypes,
+                            x=thresholds_right,
+                            mode='markers',
+                            marker=dict(color='blue', size=10, symbol='line-ns', line=dict(width=2, color='blue')),
+                            name='Right Threshold'
+                        )
+                    )
+                    fig.update_layout(width=800, height=2500, violinmode='overlay')
+                    figures.append(fig)
+                    fig.write_image(f"{figure_path}/split_violinplot_{qc_metric}.png", scale=3)
+                    fig.write_image(f"{figure_path}/split_violinplot_{qc_metric}.pdf", scale=3)
 
-                # Bar plot of artefact scores
-                df_artefact_scores = pd.DataFrame({'celltype': celltypes, 'artefact_scores': artefact_scores })
-                fig_bar = px.bar(
-                    df_artefact_scores,
-                    x='artefact_scores',
-                    y='celltype',
-                    orientation='h',
-                    title=f'Artefact Scores per Celltype for {qc_metric}'
-                )
-                figures.append(fig_bar)
-                fig_bar.write_image(f"{figure_path}/barplot_artefact_scores_{qc_metric}.png", scale=3)
+                    # Bar plot of artefact scores
+                    df_artefact_scores = pd.DataFrame({'celltype': celltypes, 'artefact_scores': artefact_scores })
+                    fig_bar = px.bar(
+                        df_artefact_scores,
+                        x='artefact_scores',
+                        y='celltype',
+                        orientation='h',
+                        title=f'Artefact Scores per Celltype for {qc_metric}'
+                    )
+                    figures.append(fig_bar)
+                    fig_bar.write_image(f"{figure_path}/barplot_artefact_scores_{qc_metric}.png", scale=3)
 
             elif qc_metric in ['convexity_metric_cell', 'convexity_min_nuceli', 'border_scores',
                             'thinness_score', 'island_score', 'cell_overlap_area',
                             'convexhull_outside_trnascripts', 'convexhull_all_trnascripts']:
-                fig = px.violin(
-                    cell_df,
-                    x=qc_metric,
-                    y=annotation_key,
-                    color='artefact',
-                    box=False,
-                    title=f'Multiplet and nucleus free cell disbtributions for {qc_metric}'
-                )
-                fig.update_layout(width=800, height=2500, violinmode='overlay')
-                figures.append(fig)
-                fig.write_image(f"{figure_path}/split_violinplot_{qc_metric}.png", scale=3)
-                fig.write_image(f"{figure_path}/split_violinplot_{qc_metric}.pdf", scale=3)
+                if plots_enabled():
+                    fig = px.violin(
+                        cell_df,
+                        x=qc_metric,
+                        y=annotation_key,
+                        color='artefact',
+                        box=False,
+                        title=f'Multiplet and nucleus free cell disbtributions for {qc_metric}'
+                    )
+                    fig.update_layout(width=800, height=2500, violinmode='overlay')
+                    figures.append(fig)
+                    fig.write_image(f"{figure_path}/split_violinplot_{qc_metric}.png", scale=3)
+                    fig.write_image(f"{figure_path}/split_violinplot_{qc_metric}.pdf", scale=3)
 
             else:
                 print(f"[NOTE] {qc_metric} is not implemented yet for doublet and nucelus free cell check.")
 
-        # Bar plot of artefact scores
-        df_artefact_scores = pd.DataFrame({'celltype': celltypes, 'artefact_scores': total_artefact_scores })
-        fig_bar = px.bar(
-            df_artefact_scores,
-            x='artefact_scores',
-            y='celltype',
-            orientation='h',
-            title=f'Artefact Scores per Celltype for all considered QC metrices'
-        )
-        figures.append(fig_bar)
-        fig_bar.write_image(f"{figure_path}/barplot_total_artefact_scores.png", scale=3)
-        fig_bar.write_image(f"{figure_path}/barplot_total_artefact_scores.pdf", scale=3)
+        if plots_enabled():
+            # Bar plot of artefact scores
+            df_artefact_scores = pd.DataFrame({'celltype': celltypes, 'artefact_scores': total_artefact_scores })
+            fig_bar = px.bar(
+                df_artefact_scores,
+                x='artefact_scores',
+                y='celltype',
+                orientation='h',
+                title=f'Artefact Scores per Celltype for all considered QC metrices'
+            )
+            figures.append(fig_bar)
+            fig_bar.write_image(f"{figure_path}/barplot_total_artefact_scores.png", scale=3)
+            fig_bar.write_image(f"{figure_path}/barplot_total_artefact_scores.pdf", scale=3)
 
-        # Generate plotly HTML
-        html_content = ''.join(fig.to_html(full_html=False) for fig in figures)
-        with open(f"{figure_path}/celltype_qc_analysis.html", "w") as f:
-            f.write(html_content)
+            # Generate plotly HTML
+            html_content = ''.join(fig.to_html(full_html=False) for fig in figures)
+            with open(f"{figure_path}/celltype_qc_analysis.html", "w") as f:
+                f.write(html_content)
 
         threshold_log_file.close()
 

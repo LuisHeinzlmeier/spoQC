@@ -1,3 +1,5 @@
+from spoqc.reporting import plots_enabled, plots_only
+
 import numpy as np
 import random
 import colorsys
@@ -168,6 +170,7 @@ def read_data_as_ddf(tmp_file, chunk_size):
     return ddf
 
 
+@plots_only
 def plotly_save_as_png(fig, plot_path, w=4, h=3, dpi=300):
     width_px  = w * dpi
     height_px = h * dpi
@@ -279,6 +282,7 @@ def fast_kde2d(
 
 
 # Create a function to generate density plots for each category of a key
+@plots_only
 def plot_density_by_category(df: pd.DataFrame, key: str, figure_path: Union[str, None], flip=False) -> None:
     """
     Generate and save density plots for each category in a given column of a DataFrame.
@@ -331,6 +335,7 @@ def plot_density_by_category(df: pd.DataFrame, key: str, figure_path: Union[str,
     plt.close()
 
 # Same as kde but scatter plot
+@plots_only
 def plot_scatter_by_category(df: pd.DataFrame, key: str, figure_path: str, suffix: str,
                              title: Optional[str], palette: Union[str, Dict[str, str]],
                              pointsize=1.0, flip=False) -> None:
@@ -374,6 +379,7 @@ def plot_scatter_by_category(df: pd.DataFrame, key: str, figure_path: str, suffi
     plt.close()
 
 
+@plots_only
 def plot_scatter_density_by_category_df(
         df: pd.DataFrame,
         key: str, figure_path:
@@ -458,6 +464,7 @@ def plot_scatter_density_by_category_df(
 
 
 # Density plot for one particular key
+@plots_only
 def plot_density(adata: AnnData, key: str, figure_path: str, flip=False) -> None:
     """
     Generate and save a density plot weighted by a specified key.
@@ -511,6 +518,7 @@ def plot_density(adata: AnnData, key: str, figure_path: str, flip=False) -> None
     plt.close()
 
 
+@plots_only
 def plot_scatter(adata: AnnData, figure_path: str, suffix: str, rect: Optional[Any],
                  colorcat: Optional[str], palette: Union[str, dict, None], title: Optional[str],
                  pointsize=1.0, flip=False) -> None:
@@ -569,6 +577,7 @@ def plot_scatter(adata: AnnData, figure_path: str, suffix: str, rect: Optional[A
     plt.close()
 
 
+@plots_only
 def plot_scatter_density(adata: AnnData, figure_path: str, suffix: str, 
                          scattercat: Optional[str], densitycat: Optional[str],
                          palette: Union[str, dict, None], title: Optional[str],
@@ -666,11 +675,12 @@ def plot_scatter_density_df(
            np.ndarray[tuple[int], np.dtype[np.floating]],
            np.ndarray[tuple[int], np.dtype[np.floating]]]:
     
-    plt.figure(figsize=(13, 10))
-    ax = plt.gca()
-    handles, labels = None, None
+    if plots_enabled():
+        plt.figure(figsize=(13, 10))
+        ax = plt.gca()
+        handles, labels = None, None
 
-    scatter = sns.scatterplot(data=df, x='x', y='y', s=pointsize, hue=scattercat, palette=palette)
+        scatter = sns.scatterplot(data=df, x='x', y='y', s=pointsize, hue=scattercat, palette=palette)
 
     # Create a kernel density estimate (KDE) plot
     xc = np.array([])
@@ -685,11 +695,15 @@ def plot_scatter_density_df(
         )
         if (z == 0).all():
                 raise ValueError("[WARNING] Failed to plot density with KDE")
+        if not plots_enabled():
+            return xc, yc, z
         xx, yy = np.meshgrid(xc, yc)
         cf = plt.contourf(xx, yy, z, levels=20, cmap=_CMAP_DENSITY, alpha=0.7, zorder=2)
         cbar = plt.colorbar(cf, ax=ax, fraction=0.046, pad=0.04, shrink=get_cbar_shrink(df))
         cbar.set_label('Density' if densitycat is None else f'Density (weighted by {densitycat})')
     except Exception as e:
+        if not plots_enabled():
+            return xc, yc, z
         print(f"Probably because not enough data points for your chosen density category: {e}")
         print("Just plotting scatter plot.")
         handles, labels = scatter.get_legend_handles_labels()
@@ -720,6 +734,7 @@ def plot_scatter_density_df(
     return xc, yc, z
 
 
+@plots_only
 def plot_original_image_cell_circles(sdata, figure_path, suffix):
     sdata.pl.render_shapes(elements="cell_circles", scale=0.3).pl.show(dpi=300, show=False)
     plt.savefig(f'{figure_path}/image_cell_circles_{suffix}.png')
@@ -835,6 +850,7 @@ def add_manual_legend(legend_dict, points=None):
     ax.legend(handles=handles, title=legend_title, loc="upper left", bbox_to_anchor=(1.05, 1.0), borderaxespad=0)
 
 
+@plots_only
 def plot_pixels(
         figure_path,
         image,
@@ -977,6 +993,9 @@ def test_resolutions_leiden(
                 diff_clusters = diff_clusters_new
                 win_res = resolutions[res]
 
+    if not plots_enabled():
+        return win_res
+
     # Unpack data into dataframe.    
     rows = []
     for block in out:
@@ -1056,6 +1075,7 @@ def get_stuff_from_image_around_coords(pixel_coords, radius, xy_image_feature, i
     return(total_stuff, stuff_list)
 
 
+@plots_only
 def check_centroids(figure_path, image_df, imagedim, dim_x, dim_y, cells_centroid_coords, nuclei_centroid_coords):
     
     plot_pixels(
@@ -1097,6 +1117,7 @@ def thread_split_list(data, t):
 
 
 
+@plots_only
 def dummyplot(figure_path, suffix):
     plt.figure(figsize=(13, 10))
     scatter = sns.scatterplot(x=[1,2], y=[1,2])
@@ -1153,6 +1174,19 @@ def read_sdata_parquet_tmp_files(sdata, spoqc_tmp_folder, suffix):
     except Exception as e:
         print(f"[WARN] Failed to read parquet files from {spoqc_tmp_folder}: {e}")
         return None
+
+
+def grouped_pixels_to_image(values, imagedim, shape, *, dtype):
+    """Place per-pixel aggregates into a zero-filled image in row-major order."""
+    x_min, x_max = int(imagedim.bb_xmin), int(imagedim.bb_xmax)
+    y_min, y_max = int(imagedim.bb_ymin), int(imagedim.bb_ymax)
+    x = values.index.get_level_values("x").to_numpy()
+    y = values.index.get_level_values("y").to_numpy()
+    inside = (x >= x_min) & (x < x_max) & (y >= y_min) & (y < y_max)
+
+    image = np.zeros((len(range(y_min, y_max)), len(range(x_min, x_max))), dtype=dtype)
+    image[y[inside] - y_min, x[inside] - x_min] = values.fillna(0).to_numpy(dtype=dtype)[inside]
+    return image.reshape(shape)
 
 
 def nparr_to_parquet(np_arr, prefix, spoqc_tmp_folder, suffix):
@@ -1304,6 +1338,7 @@ def read_df_parquet_tmp_files_scorify(cluster_df, spoqc_tmp_folder, suffix):
         return None
 
 
+@plots_only
 def plot_histogram_for_array(array, nbins, figure_path, title, suffix, t=None, std=None, nstds=1):
     sns.histplot(array, bins=nbins)
     plt.title(title)
@@ -1396,6 +1431,7 @@ def estimate_background_intensity_dask(sdata, image_type, resolution, staining, 
 
 
 # TODO make this new function
+@plots_only
 def plot_spatial_density_of_category(
     data: Union[pd.DataFrame, ad.AnnData],
     pointscat: Optional[str],
@@ -1541,6 +1577,7 @@ def plot_spatial_density_of_category(
 
 
 # TODO make this new function
+@plots_only
 def plot_marker_density_in_spatial_context(
     sdata: Dict[str, Any],
     markers: Dict[str, List[str]],
@@ -1604,6 +1641,7 @@ def plot_marker_density_in_spatial_context(
 
 
 # TODO make this new function
+@plots_only
 def plot_marker_boxplot(
     sdata: Dict[str, Any],
     markers: Dict[str, List[str]],

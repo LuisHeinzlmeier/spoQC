@@ -1,3 +1,5 @@
+from spoqc.reporting import plots_enabled
+
 import numpy as np
 import cv2
 import os
@@ -20,16 +22,17 @@ def _pixel_edge_strength(figure_path, xy_intensities, imagedim, name, spoqc_tmp_
     # edge_strength = np.sqrt(grad_x**2 + grad_y**2)
     log10_edge_strength_image = np.log10( ( np.sqrt(grad_x**2 + grad_y**2) + 1 ) )
 
-    helperfuncs.plot_pixels(
-        figure_path,
-        log10_edge_strength_image,
-        imagedim,
-        'edge_strength', 
-        'Edge Strength', 
-        'hot',
-        False,
-        False
-    )
+    if plots_enabled():
+        helperfuncs.plot_pixels(
+            figure_path,
+            log10_edge_strength_image,
+            imagedim,
+            'edge_strength',
+            'Edge Strength',
+            'hot',
+            False,
+            False
+        )
 
     timer.stop()
 

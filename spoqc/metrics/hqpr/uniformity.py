@@ -1,3 +1,5 @@
+from spoqc.reporting import plots_enabled
+
 import os
 import numpy as np
 
@@ -45,16 +47,17 @@ def _pixel_uniformity(figure_path, img, imagedim, name, spoqc_tmp_folder, tmp_su
     uniformity_image = -sliding_window_padded(kl_divergence_uniform, img, radius, mode=mode)
     timer.stop()
     
-    helperfuncs.plot_pixels(
-        figure_path,
-        uniformity_image,
-        imagedim,
-        "uniformity",
-        "Pixel Uniformity",
-        "hot",
-        False,
-        False,
-    )
+    if plots_enabled():
+        helperfuncs.plot_pixels(
+            figure_path,
+            uniformity_image,
+            imagedim,
+            "uniformity",
+            "Pixel Uniformity",
+            "hot",
+            False,
+            False,
+        )
 
     helperfuncs.nparr_to_parquet(uniformity_image.flatten(), name, spoqc_tmp_folder, tmp_suffix)
 
