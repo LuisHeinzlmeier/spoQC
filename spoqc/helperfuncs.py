@@ -1,4 +1,5 @@
 import atexit
+from itertools import batched
 from tempfile import TemporaryDirectory
 import numpy as np
 import random
@@ -120,16 +121,18 @@ def create_fraction_df(adata: AnnData, group: str, category: str) -> Dict[str, U
     return(d)    
 
 
-def read_data_as_dda(tmp_files, chunk_size):
+def read_data_as_dda(tmp_files, chunk_size, *, split_row_groups=False):
     # Preallocate a Dask Array with correct shape and chunks
     col_series = [
-        dd.read_parquet(file).iloc[:, 0].reset_index(drop=True)
+        dd.read_parquet(file, split_row_groups=True if split_row_groups else 'infer').iloc[:, 0].reset_index(drop=True)
         for file in tmp_files
     ]
 
     # Compute all per-file partition lengths together (in parallel) instead of
     # letting to_dask_array(lengths=True) block on each file one at a time.
-    lengths_per_col = dask.compute(*[s.map_partitions(len) for s in col_series])
+    length_tasks = [series.map_partitions(len) for series in col_series]
+    options = {'num_workers': 4} if split_row_groups else {}
+    lengths_per_col = dask.compute(*length_tasks, **options)
 
     array_columns = []
     for col_ddf, lengths in zip(col_series, lengths_per_col):
@@ -145,12 +148,29 @@ def read_data_as_dda(tmp_files, chunk_size):
     return dask_array
 
 
+def compute_pixel_sample(array):
+    """Materialize the selected rows in their original partition order."""
+    blocks = array.to_delayed().ravel()
+    return np.concatenate([
+        block
+        for batch in batched(blocks, 16)
+        for block in dask.compute(*batch, num_workers=4)
+    ])
+
+
 def checkpoint_pixel_scores(frame, directory):
     """Cache one Parquet file per partition for the current SpoQC process."""
     checkpoint = TemporaryDirectory(prefix=".pixel-scores-", dir=directory)
     path = checkpoint.name
     try:
-        frame.to_parquet(path, write_index=True)
+        writes = (
+            dask.delayed(pd.DataFrame.to_parquet)(
+                part, os.path.join(path, f"part.{i:08d}.parquet"), index=True,
+            )
+            for i, part in enumerate(frame.to_delayed())
+        )
+        for batch in batched(writes, 16):
+            dask.compute(*batch, num_workers=4)
         cached = dd.read_parquet(
             path, calculate_divisions=True, split_row_groups=False, aggregate_files=False,
         )
