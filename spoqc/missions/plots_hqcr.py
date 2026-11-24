@@ -1,3 +1,5 @@
+from spoqc.reporting import plots_enabled, plots_only
+
 import pandas as pd
 import numpy as np
 import plotly.express as px
@@ -43,7 +45,7 @@ def plot_hqcr(sdata, figure_path, min_number_good_cells_hqcr, minimum_number_of_
         island_select[island_idxs] = 1
         sdata['table'].obs['island_select'] = island_select
 
-        if ( num_good_qc_cells + num_bad_qc_cells > minimum_number_of_total_cells ):
+        if plots_enabled() and num_good_qc_cells + num_bad_qc_cells > minimum_number_of_total_cells:
             helperfuncs.plot_scatter(
                 island_adata,
                 f'{figure_path}/{island_suffix}/',
@@ -71,6 +73,7 @@ def plot_hqcr(sdata, figure_path, min_number_good_cells_hqcr, minimum_number_of_
     hqcr_df.to_json(f"{figure_path}/hqcr.json", orient="columns")
 
 
+@plots_only
 def generate_hqcr_html(figure_path, df_plot, cat, ncat, catnames, qc_metrics):
 
     figures = []

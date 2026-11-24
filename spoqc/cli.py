@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # coding: utf-8
 from __future__ import annotations
+from spoqc.reporting import configure_plots
+
 
 # In[]
 import sys
@@ -114,6 +116,8 @@ from spoqc import __version__
 @click.option("--dev_report", required=False, is_flag=True,
               help="""This is just for developing and testing the tool (report).""")
 
+@click.option("--plots/--no-plots", default=True, help="Generate figures and HTML reports.")
+@configure_plots
 def main(**kwargs) -> None:
     print("[WELCOME] Lets explore the quality of your data!")
 

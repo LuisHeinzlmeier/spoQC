@@ -1,3 +1,5 @@
+from spoqc.reporting import plots_enabled
+
 import pkgutil
 import importlib
 import dask.dataframe as dd
@@ -32,23 +34,27 @@ def combine_priors_hqpr(enterprise):
         mask_name: (row_means_series > 0.5).astype("int8"),
     })
 
-    helperfuncs.plot_pixels(
-        figure_path,
-        enterprise.hqpr_priorset.prior_ddf[belief_name].compute().to_numpy().reshape(
-            enterprise.cargo.dim_x, enterprise.cargo.dim_y
-        ),
-        enterprise.cargo.imagedim,
-        'beliefs',
-        'Combined probability (beliefs)', 
-        'hot',
-        False,
-        False
-    )
+    if plots_enabled():
+        helperfuncs.plot_pixels(
+            figure_path,
+            enterprise.hqpr_priorset.prior_ddf[belief_name].compute().to_numpy().reshape(
+                enterprise.cargo.dim_x, enterprise.cargo.dim_y
+            ),
+            enterprise.cargo.imagedim,
+            'beliefs',
+            'Combined probability (beliefs)',
+            'hot',
+            False,
+            False
+        )
 
     print("[NOTE] Writing out data")
     timer = helperfuncs.Timer()
     timer.start()
-    helperfuncs.ddf_to_parquet(enterprise.hqpr_priorset.prior_ddf, 'mask_raw', enterprise.args.tmp_dir, [], tmp_suffix)
+    helperfuncs.ddf_to_parquet(
+        enterprise.hqpr_priorset.prior_ddf, 'mask_raw', enterprise.args.tmp_dir, [], tmp_suffix,
+        include_index=False,
+    )
     timer.stop()
 
     return enterprise.hqpr_priorset.prior_ddf
@@ -70,23 +76,27 @@ def combine_priors_hqtr(enterprise):
         mask_name: (row_means_series > 0.5).astype("int8"),
     })
 
-    helperfuncs.plot_pixels(
-        figure_path,
-        enterprise.hqtr_priorset.prior_ddf[belief_name].compute().to_numpy().reshape(
-            enterprise.cargo.dim_x, enterprise.cargo.dim_y
-        ),
-        enterprise.cargo.imagedim,
-        'beliefs',
-        'Combined probability (beliefs)', 
-        'hot',
-        False,
-        False
-    )
+    if plots_enabled():
+        helperfuncs.plot_pixels(
+            figure_path,
+            enterprise.hqtr_priorset.prior_ddf[belief_name].compute().to_numpy().reshape(
+                enterprise.cargo.dim_x, enterprise.cargo.dim_y
+            ),
+            enterprise.cargo.imagedim,
+            'beliefs',
+            'Combined probability (beliefs)',
+            'hot',
+            False,
+            False
+        )
 
     print("[NOTE] Writing out data")
     timer = helperfuncs.Timer()
     timer.start()
-    helperfuncs.ddf_to_parquet(enterprise.hqtr_priorset.prior_ddf, 'mask_raw', enterprise.args.tmp_dir, [], tmp_suffix)
+    helperfuncs.ddf_to_parquet(
+        enterprise.hqtr_priorset.prior_ddf, 'mask_raw', enterprise.args.tmp_dir, [], tmp_suffix,
+        include_index=False,
+    )
     timer.stop()
 
     return enterprise.hqtr_priorset.prior_ddf

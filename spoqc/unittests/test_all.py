@@ -35,17 +35,17 @@ class TestParquetEquality(unittest.TestCase):
         )
 
     # ---------- Helper for Dask comparisons ----------
-    def assert_dask_equal(self, test_path, ref_path):
+    def assert_dask_equal(self, test_path, ref_path, *, compare_index=True):
         test_dd = dd.read_parquet(test_path, engine="pyarrow")
         ref_dd = dd.read_parquet(ref_path, engine="pyarrow")
 
         # Memory-friendly hash comparison
         test_hash = test_dd.map_partitions(
-            lambda df: pd.util.hash_pandas_object(df, index=True).sum()
+            lambda df: pd.util.hash_pandas_object(df, index=compare_index).sum()
         ).compute().sum()
 
         ref_hash = ref_dd.map_partitions(
-            lambda df: pd.util.hash_pandas_object(df, index=True).sum()
+            lambda df: pd.util.hash_pandas_object(df, index=compare_index).sum()
         ).compute().sum()
 
         self.assertEqual(test_hash, ref_hash, f"Mismatch in dataset: {test_path}")
@@ -77,20 +77,23 @@ class TestParquetEquality(unittest.TestCase):
     def test_hqpr_0_output_mask_raw(self):
         self.assert_dask_equal(
             f'{builtins.TEST_DATA_DIR}/hqpr_0_output_mask_raw',
-            f'{builtins.REF_DATA_DIR}/hqpr_0_output_mask_raw'
+            f'{builtins.REF_DATA_DIR}/hqpr_0_output_mask_raw',
+            compare_index=False,
         )
 
     def test_hqpr_0_output_mask_smoothed_raw(self):
         self.assert_dask_equal(
             f'{builtins.TEST_DATA_DIR}/hqpr_0_output_mask_smoothed_raw',
-            f'{builtins.REF_DATA_DIR}/hqpr_0_output_mask_smoothed_raw'
+            f'{builtins.REF_DATA_DIR}/hqpr_0_output_mask_smoothed_raw',
+            compare_index=False,
         )
 
      # ---------- HQTR tests ----------
     def test_hqtr_output_mask_raw(self):
         self.assert_dask_equal(
             f'{builtins.TEST_DATA_DIR}/hqtr_output_mask_raw',
-            f'{builtins.REF_DATA_DIR}/hqtr_output_mask_raw'
+            f'{builtins.REF_DATA_DIR}/hqtr_output_mask_raw',
+            compare_index=False,
         )
 
     def test_hqtr_output_qv_prob(self):
@@ -108,7 +111,8 @@ class TestParquetEquality(unittest.TestCase):
     def test_hqtr_output_mask_smoothed_raw(self):
         self.assert_dask_equal(
             f'{builtins.TEST_DATA_DIR}/hqtr_output_mask_smoothed_raw',
-            f'{builtins.REF_DATA_DIR}/hqtr_output_mask_smoothed_raw'
+            f'{builtins.REF_DATA_DIR}/hqtr_output_mask_smoothed_raw',
+            compare_index=False,
         )
 
 # %%

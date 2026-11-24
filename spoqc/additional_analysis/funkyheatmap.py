@@ -11,6 +11,10 @@ import plotly.graph_objects as go
 from funkyheatmappy import funky_heatmap
 from IPython.display import Image, display
 
+from spoqc.reporting import plots_only
+
+
+@plots_only
 def plot_funkyheatmap(rna, figure_path, cell_metrices):
     ####################################################################################################################
     # Setup
