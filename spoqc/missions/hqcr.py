@@ -348,7 +348,6 @@ def start_exploration(enterprise, test_res=False):
         # Leiden clustering.
         print("[NOTE] Cell QC clustering")
         sc.pp.neighbors(enterprise.hqcr_set.cell_clustering_adata, n_neighbors=20, random_state=enterprise.args.seed)
-        sc.tl.umap(enterprise.hqcr_set.cell_clustering_adata, random_state=enterprise.args.seed)
         if test_res: # Use this to optimize the step.
             helperfuncs.test_resolutions_leiden(
                 enterprise.hqcr_set.cell_clustering_adata,
