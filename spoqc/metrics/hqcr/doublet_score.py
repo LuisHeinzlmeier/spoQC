@@ -12,6 +12,49 @@ import os
 from ... import helperfuncs
 from ... import core
 
+def _transcripts_near_doublets(transcripts, doublets, distance_thresh):
+    mask = np.zeros(len(transcripts), dtype=bool)
+    if doublets.empty or distance_thresh < 0:
+        return mask
+
+    x = transcripts['x']
+    y = transcripts['y']
+    centers = [(row['x'], row['y']) for _, row in doublets.iterrows()]
+    if x.dtype not in (np.dtype('float32'), np.dtype('float64')) or not np.isfinite(distance_thresh):
+        for x1, y1 in centers:
+            distances = np.sqrt((x - x1)**2 + (y - y1)**2)
+            mask |= distances.to_numpy() <= distance_thresh
+        return mask
+
+    x_centers = np.array([x1 for x1, _ in centers], dtype=np.float64)
+    with np.errstate(over='ignore'):
+        cast_x_centers = x_centers.astype(x.dtype).astype(np.float64)
+        # Widen the x bounds to cover scalar promotion and rounding, including
+        # underflow in the squared distance. The original distance test below
+        # makes every final decision.
+        radius = 2 * max(float(distance_thresh), np.sqrt(float(np.finfo(x.dtype).tiny)))
+        lower = np.nextafter(np.minimum(x_centers, cast_x_centers) - radius, -np.inf)
+        upper = np.nextafter(np.maximum(x_centers, cast_x_centers) + radius, np.inf)
+
+    chunk_size = 1_000_000
+    for start in range(0, len(transcripts), chunk_size):
+        stop = min(start + chunk_size, len(transcripts))
+        block_x = x.iloc[start:stop]
+        block_y = y.iloc[start:stop]
+        x_values = block_x.to_numpy()
+        order = np.argsort(x_values)
+        sorted_x = x_values[order]
+        starts = np.searchsorted(sorted_x, lower, side='left')
+        stops = np.searchsorted(sorted_x, upper, side='right')
+        block_mask = mask[start:stop]
+        for center_idx in np.flatnonzero(starts < stops):
+            x1, y1 = centers[center_idx]
+            rows = order[starts[center_idx]:stops[center_idx]]
+            distances = np.sqrt((block_x.iloc[rows] - x1)**2 + (block_y.iloc[rows] - y1)**2)
+            block_mask[rows[distances.to_numpy() <= distance_thresh]] = True
+    return mask
+
+
 # window_sizes = for plotting. You can selected more windowsizes. This is just to zoom in or out for double plots.
 # num_doublet = is just the amount of doublet that will be plottet as examples.
 # distance = Threshold to use to call a cell a doublet cell if its close to the detected doublet signal of ovrlpy.
@@ -237,14 +280,10 @@ def _calc_doublet_score(
 
 
     # Ovrlp adjusts its own Polars table. The original coordinates and index are still here.
-    # Detect transcript that might belong to doublets
-    transcript_doublet = np.array([False] * len(transcript_coordinates_df))
-    transcript_wdoublet = np.array([0] * len(transcript_coordinates_df))
-    for i, doublet in corrected_doublet_df.iterrows():
-        x1, y1 = doublet['x'], doublet['y']
-        distances = np.sqrt((transcript_coordinates_df['x'] - x1)**2 + (transcript_coordinates_df['y'] - y1)**2)
-        transcript_doublet[distances <= distance_thresh] = True
-        transcript_wdoublet[distances <= distance_thresh] = 1
+    transcript_doublet = _transcripts_near_doublets(
+        transcript_coordinates_df, corrected_doublet_df, distance_thresh,
+    )
+    transcript_wdoublet = transcript_doublet.astype(int)
 
     # Write out transcript doublet information for later usage
     transcript_doublet_df = pd.DataFrame({
