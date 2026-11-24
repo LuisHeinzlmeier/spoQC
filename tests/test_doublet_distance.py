@@ -19,6 +19,6 @@ def test_doublet_window_matches_unrestricted_distance(dtype, threshold):
             (transcripts["x"] - event["x"]) ** 2 + (transcripts["y"] - event["y"]) ** 2
         )
         expected |= distances.to_numpy() <= threshold
-    np.testing.assert_array_equal(
-        _transcripts_near_doublets(transcripts, doublets, threshold), expected,
-    )
+    result = _transcripts_near_doublets(transcripts, doublets, threshold)
+    assert isinstance(result, np.ndarray)
+    np.testing.assert_array_equal(result, expected)

@@ -19,7 +19,8 @@ def _transcripts_near_doublets(transcripts, doublets, distance_thresh):
     centers = [(row['x'], row['y']) for _, row in doublets.iterrows()]
     if x.dtype not in (np.dtype('float32'), np.dtype('float64')) or not np.isfinite(distance_thresh):
         for x1, y1 in centers:
-            mask |= np.sqrt((x - x1)**2 + (y - y1)**2) <= distance_thresh
+            distances = np.sqrt((x - x1)**2 + (y - y1)**2)
+            mask |= distances.to_numpy() <= distance_thresh
         return mask
 
     x_centers = np.array([x1 for x1, _ in centers], dtype=np.float64)
