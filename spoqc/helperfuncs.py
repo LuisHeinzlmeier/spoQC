@@ -1,3 +1,5 @@
+import atexit
+from tempfile import TemporaryDirectory
 import numpy as np
 import random
 import colorsys
@@ -141,6 +143,25 @@ def read_data_as_dda(tmp_files, chunk_size):
     # da.to_zarr(dask_array, "dask_array.zarr", overwrite=True); dask_array = da.from_zarr("dask_array.zarr")
 
     return dask_array
+
+
+def checkpoint_pixel_scores(frame, directory):
+    """Cache one Parquet file per partition for the current SpoQC process."""
+    checkpoint = TemporaryDirectory(prefix=".pixel-scores-", dir=directory)
+    path = checkpoint.name
+    try:
+        frame.to_parquet(path, write_index=True)
+        cached = dd.read_parquet(
+            path, calculate_divisions=True, split_row_groups=False, aggregate_files=False,
+        )
+        if cached.divisions != frame.divisions:
+            raise ValueError("Pixel-score checkpoint did not preserve partition divisions")
+    except BaseException:
+        checkpoint.cleanup()
+        raise
+    # Later prior calculations still use the returned lazy frame.
+    atexit.register(checkpoint.cleanup)
+    return cached
 
 
 def read_data_as_ddf(tmp_file, chunk_size):

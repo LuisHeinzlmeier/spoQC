@@ -75,9 +75,9 @@ def _calc_pixel_score(
     else:
         sys.exit(f'[ERROR] Modality {modality} does not exist')
 
-    # Materialize s_score/as_score/intensity once so the repeated .compute()
-    # calls below don't each re-walk the whole graph from scratch.
-    image_ddf = image_ddf.persist()
+    image_ddf = helperfuncs.checkpoint_pixel_scores(
+        image_ddf, os.path.dirname(spoqc_tmp_folder_metrices),
+    )
     timer.stop()
 
     # Background refined image (background_intensity was already estimated
@@ -292,7 +292,8 @@ def _calc_pixel_score_prior(
             sys.exit(f"[ERROR] File {metric_file} is missing")
 
     print('[NOTE] Agglomerate pixel metrices and cluster')
-    num_values_image = len(sdata[image_type][resolution].image.values[0].flatten())
+    height, width = sdata[image_type][resolution].image.shape[-2:]
+    num_values_image = height * width
     empty_clusters = da.zeros(num_values_image, chunks=chunk_size)
     image_ddf = dd.from_dask_array(empty_clusters, columns=['cluster'])
     timer.start()
@@ -307,7 +308,6 @@ def _calc_pixel_score_prior(
         kmeans_sample_size
     ))
     print("[NOTE] Time for the whole clustering process:")
-    image_ddf = image_ddf.persist()
     timer.stop()
 
     #####################
@@ -366,7 +366,6 @@ def _calc_pixel_score_prior(
             f'mask_{col}': (scaled_ddf.iloc[:, 0] > 0.5).astype(int),
         }
     )
-    image_ddf = image_ddf.persist()
     timer.stop()
 
     helperfuncs.plot_pixels(
