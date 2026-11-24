@@ -24,3 +24,4 @@ feat/no-plots                    # perf | exact | not sent | Skip figures and HT
 # perf/vectorize-bubble-geometry  # perf | exact | not sent | Compute polygon area and length in bulk; retain scalar thinness arithmetic
 # perf/index-nucleus-centroids     # perf | exact | not sent | Find intersecting nucleus centroids with a spatial index and preserve row order
 # perf/project-doublet-transcripts # perf | exact | not sent | Read four transcript columns once for DoubletQC
+# perf/checkpoint-clustering-priors # perf | exact | not sent | Checkpoint pixel-score partitions to disk and bound clustering working memory
