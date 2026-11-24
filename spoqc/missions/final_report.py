@@ -1,4 +1,6 @@
 # In[]
+from spoqc.reporting import plots_only
+
 import os
 import re
 import base64
@@ -1002,6 +1004,7 @@ def create_final_report(figure_path, stainings, generate_report_doc_files):
                 f.write(html)
 
 # %%
+@plots_only
 def run_final_report(enterprise):
     if enterprise.args.step in ['all', 'final_report']:
         create_final_report(

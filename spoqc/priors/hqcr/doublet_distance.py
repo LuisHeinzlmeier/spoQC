@@ -1,5 +1,7 @@
 
 # In[]
+from spoqc.reporting import plots_enabled
+
 import pandas as pd
 import numpy as np
 
@@ -18,16 +20,17 @@ def _calc_probs_doublet_distance(sdata, figure_path, nstds = 1.0):
         prob_densities = norm.pdf(distances, loc=0.0, scale=nstds*max_std)
         probs = helperfuncs.min_max_normalize(prob_densities)
 
-    helperfuncs.plot_histogram_for_array(
-        distances,
-        100,
-        figure_path,
-        f"Doublet distance: t=0.0 with {nstds} x {np.round(max_std, 3)} std",
-        "doublet_distance_prior",
-        t=0.0,
-        std=max_std,
-        nstds=nstds,
-    )
+    if plots_enabled():
+        helperfuncs.plot_histogram_for_array(
+            distances,
+            100,
+            figure_path,
+            f"Doublet distance: t=0.0 with {nstds} x {np.round(max_std, 3)} std",
+            "doublet_distance_prior",
+            t=0.0,
+            std=max_std,
+            nstds=nstds,
+        )
 
     probs_good_quality = 1 - probs
     return probs_good_quality
@@ -71,19 +74,20 @@ def _calc_probs_ddd(sdata, figure_path, max_std = None, nstds = 1.0, tail = "rig
 
         probs = helperfuncs.min_max_normalize(pdf)
 
-        helperfuncs.plot_histogram_for_array(
-            log10_ddds,
-            100,
-            figure_path,
-            f"""
-            Log10+1 Doublet density divided by distance: t={np.round(mean, 3)} with {nstds} x {np.round(max_std, 3)} std 
-            & {tail} tail filtering
-            """,
-            "doublet_ddd_prior",
-            t=mean,
-            std=max_std,
-            nstds=nstds,
-        )
+        if plots_enabled():
+            helperfuncs.plot_histogram_for_array(
+                log10_ddds,
+                100,
+                figure_path,
+                f"""
+                Log10+1 Doublet density divided by distance: t={np.round(mean, 3)} with {nstds} x {np.round(max_std, 3)} std
+                & {tail} tail filtering
+                """,
+                "doublet_ddd_prior",
+                t=mean,
+                std=max_std,
+                nstds=nstds,
+            )
 
     probs_good_quality = probs
     return probs_good_quality

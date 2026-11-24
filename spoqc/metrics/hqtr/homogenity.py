@@ -1,3 +1,5 @@
+from spoqc.reporting import plots_enabled
+
 import numpy as np
 import os
 
@@ -37,16 +39,17 @@ def _pixel_homogeneity(figure_path, img, imagedim, name, spoqc_tmp_folder, tmp_s
     homogeneity_image = sliding_window_padded(homogeneity, img, radius, mode=mode)
     timer.stop()
 
-    helperfuncs.plot_pixels(
-        figure_path,
-        homogeneity_image,
-        imagedim,
-        "homogeneity",
-        "Pixel Homogeneity",
-        "hot",
-        False,
-        False,
-    )
+    if plots_enabled():
+        helperfuncs.plot_pixels(
+            figure_path,
+            homogeneity_image,
+            imagedim,
+            "homogeneity",
+            "Pixel Homogeneity",
+            "hot",
+            False,
+            False,
+        )
 
     helperfuncs.nparr_to_parquet(homogeneity_image.flatten(), name, spoqc_tmp_folder, tmp_suffix)
 

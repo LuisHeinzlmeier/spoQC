@@ -1,3 +1,5 @@
+from spoqc.reporting import plots_enabled
+
 import os
 import numpy as np
 import matplotlib.pyplot as plt
@@ -67,7 +69,7 @@ def check_for_valid_geometries(sdata, figure_path):
         for i, obj in enumerate(geometries):
             if( not obj.is_valid ):
 
-                if ( num_invalid_examples < 10 ):
+                if plots_enabled() and num_invalid_examples < 10:
                     x, y = obj.exterior.xy
 
                     fig, ax = plt.subplots()

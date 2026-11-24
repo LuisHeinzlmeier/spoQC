@@ -1,4 +1,6 @@
 
+from spoqc.reporting import plots_enabled
+
 import numpy as np
 import os
 
@@ -41,17 +43,18 @@ def _pixel_entropy(figure_path, img, imagedim, name, spoqc_tmp_folder, tmp_suffi
     timer.stop()
 
     print("... Create plot")
-    helperfuncs.plot_pixels(
-        figure_path,
-        entropy_image,
-        imagedim,
-        "entropy",
-        "Pixel Entropy",
-        "hot",
+    if plots_enabled():
+        helperfuncs.plot_pixels(
+            figure_path,
+            entropy_image,
+            imagedim,
+            "entropy",
+            "Pixel Entropy",
+            "hot",
 
-        False,
-        False,
-    )
+            False,
+            False,
+        )
 
     helperfuncs.nparr_to_parquet(entropy_image.flatten(), name, spoqc_tmp_folder, tmp_suffix)
 

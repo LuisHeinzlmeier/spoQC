@@ -1,3 +1,5 @@
+from spoqc.reporting import plots_only
+
 import numpy as np
 import pandas as pd
 import gzip
@@ -77,6 +79,7 @@ def get_rna_type(gene_symbol: str, gene_biotype_dict: dict) -> str:
     return gene_biotype_dict.get(gene_symbol, "Unknown")
 
 
+@plots_only
 def transcriptqc(sdata, figure_path, annotation_file, key_transcripts):
 
     timer = helperfuncs.Timer()
@@ -150,6 +153,7 @@ def transcriptqc(sdata, figure_path, annotation_file, key_transcripts):
     timer.stop()
 
 
+@plots_only
 def negativeprobeqc(sdata: Any, figure_path: str, key_transcripts: str) -> None:
     """
     Perform quality control on negative probes by visualizing the density of negative probes 
@@ -175,6 +179,7 @@ def negativeprobeqc(sdata: Any, figure_path: str, key_transcripts: str) -> None:
                                         'Density of negative probes')
 
 
+@plots_only
 def transcriptz(sdata: Any, figure_path: str, key_transcripts: str) -> None:
     """
     Create and save histograms for the distribution of the 'z' values from the spatial transcriptomics data.

@@ -1,3 +1,5 @@
+from spoqc.reporting import plots_enabled
+
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
@@ -55,18 +57,19 @@ def _calculate_global_moran_I_values(sdata, figure_path, spoqc_tmp_folder):
     # Sort the DataFrame by Moran's I in descending order and select the top x genes
     data_sorted = data.sort_values(by='morans_I', ascending=False)
 
-    # Create the bar plot with flipped axes
-    fig = go.Figure()
-    fig.add_trace(go.Bar(x=data_sorted['morans_I'], y=data_sorted['genes'], orientation='h'))
-    fig.update_layout(
-        xaxis_title="Moran's I",
-        yaxis_title="Genes",
-        title=f"Autocorrelation for all Genes"
-    )
-    helperfuncs.apply_general_plotly_layout(fig, True)
-    fig.write_html(f"{figure_path}/contamination_global_morans_I.html")
-    fig.write_image(f"{figure_path}/contamination_global_morans_I.png", scale=3)
-    fig.write_image(f"{figure_path}/contamination_global_morans_I.pdf", scale=3)
+    if plots_enabled():
+        # Create the bar plot with flipped axes
+        fig = go.Figure()
+        fig.add_trace(go.Bar(x=data_sorted['morans_I'], y=data_sorted['genes'], orientation='h'))
+        fig.update_layout(
+            xaxis_title="Moran's I",
+            yaxis_title="Genes",
+            title=f"Autocorrelation for all Genes"
+        )
+        helperfuncs.apply_general_plotly_layout(fig, True)
+        fig.write_html(f"{figure_path}/contamination_global_morans_I.html")
+        fig.write_image(f"{figure_path}/contamination_global_morans_I.png", scale=3)
+        fig.write_image(f"{figure_path}/contamination_global_morans_I.pdf", scale=3)
 
     helperfuncs.df_to_parquet(data_sorted, 'ambient', spoqc_tmp_folder, [], 'genes')
     rna_adata.X = rna_adata.layers['raw']

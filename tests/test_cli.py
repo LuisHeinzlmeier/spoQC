@@ -13,3 +13,4 @@ def test_cli_help():
     assert result.returncode == 0
     assert "usage" in result.stdout.lower()
     assert "--help" in result.stdout
+    assert "--no-plots" in result.stdout

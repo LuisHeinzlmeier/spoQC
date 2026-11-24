@@ -1,3 +1,5 @@
+from spoqc.reporting import plots_enabled
+
 import pandas as pd
 import numpy as np
 
@@ -29,16 +31,17 @@ def _calc_probs(df, figure_path, gmm_mod=1, nstds=1, t=2, std=1, tail="right"):
 
     print(f'Using std {max_std} and mean {max_mean} for pixel prior and tail {tail}')
 
-    helperfuncs.plot_histogram_for_array(
-        values,
-        20,
-        figure_path,
-        f"Negative probes: t={np.round(max_mean, 3)} with {nstds} x {np.round(max_std, 3)} std & {tail} tail filtering",
-        "negative_probes_prior",
-        t=max_mean,
-        std=max_std,
-        nstds=nstds,
-    )
+    if plots_enabled():
+        helperfuncs.plot_histogram_for_array(
+            values,
+            20,
+            figure_path,
+            f"Negative probes: t={np.round(max_mean, 3)} with {nstds} x {np.round(max_std, 3)} std & {tail} tail filtering",
+            "negative_probes_prior",
+            t=max_mean,
+            std=max_std,
+            nstds=nstds,
+        )
 
     pdf = norm.pdf(values, loc=max_mean, scale=nstds*max_std)
 
