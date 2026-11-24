@@ -1,6 +1,5 @@
 import spatialdata as sd
 import numpy as np
-import pandas as pd
 import dask.array as da
 import dask.dataframe as dd
 
@@ -37,20 +36,10 @@ def _generate_transcript_quality_density_image(
         .rename("qv_means")
     )
 
-    x_idx = range(int(imagedim.bb_xmin), int(imagedim.bb_xmax))
-    y_idx = range(int(imagedim.bb_ymin), int(imagedim.bb_ymax))
-    grid = [(x, y) for y in y_idx for x in x_idx]
-    grid_mi = pd.MultiIndex.from_tuples(grid, names=["x", "y"])
-
-    transcript_density_list = (
-        gm.reindex(grid_mi)     # align to the full grid
-        .fillna(0.0)
-        .to_numpy()
-        .astype("float64")
+    xy_transcript_density = helperfuncs.grouped_pixels_to_image(
+        gm, imagedim, (dim_x, dim_y), dtype=np.float64,
     )
     timer.stop()
-
-    xy_transcript_density = np.array(transcript_density_list).reshape(dim_x, dim_y)
 
     # Create circular kernel (disk mask)
     y, x = np.ogrid[-kernel_radius:kernel_radius+1, -kernel_radius:kernel_radius+1]
