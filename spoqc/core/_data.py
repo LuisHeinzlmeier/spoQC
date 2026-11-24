@@ -189,6 +189,8 @@ class CelltypeAnnotation:
 
             df_labels = pd.read_csv(f'{input_path}', sep=None, engine='python')
             df_labels = df_labels[['Barcode', 'Cluster']]
+            # Labels are names: cluster ids (e.g. Xenium graphclust 1, 2, 3) are read as numbers.
+            df_labels['Cluster'] = df_labels['Cluster'].astype(str)
             df_labels.index = df_labels['Barcode']
             df_labels = df_labels.drop(columns='Barcode')
             df_labels.columns = [annotation_key]
@@ -215,7 +217,7 @@ class CelltypeAnnotation:
             adata.obs[annotation_key] = adata.obs[annotation_key].fillna('unkown')
             
             # Clean up celltype names, else you will always run in potential code breaks.
-            adata.obs[annotation_key] = [re.sub(r'[^A-Za-z0-9]', '', x) for x in adata.obs[annotation_key]]
+            adata.obs[annotation_key] = [re.sub(r'[^A-Za-z0-9]', '', str(x)) for x in adata.obs[annotation_key]]
 
             # Get and order celltypes
             celltypes = list(set(adata.obs[annotation_key]))
