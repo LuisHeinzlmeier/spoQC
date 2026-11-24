@@ -98,6 +98,12 @@ def _calc_sc_metrics(sdata, figure_path, annotation_path, annotation_key):
     ####################################################################################################################
     ###### QC PLOTS RNA ################################################################################################
     ####################################################################################################################
+    rna.var['log_n_cells_by_counts'] = np.log10(rna.var['n_cells_by_counts'] + 1)
+
+    # The next QC stages also use NumPy's shared random state.
+    scatter_sample = np.arange(rna.n_obs) < 10_000
+    np.random.shuffle(scatter_sample)
+
     if not plots_enabled():
         for level in ["total_counts", "transcript_counts", "n_genes_by_counts", "cell_area", "nucleus_area"]:
             rna.obs[f"log_{level}"] = np.log10(rna.obs[level] + 1)
@@ -250,7 +256,6 @@ def _calc_sc_metrics(sdata, figure_path, annotation_path, annotation_key):
 
     num_genes = len([1 for i in rna.var.n_cells_by_counts > min(THRESH_GENE_FILTER, np.ceil(0.01 * rna.n_obs)) if i == False])
 
-    rna.var['log_n_cells_by_counts'] = np.log10(rna.var['n_cells_by_counts'] + 1)
 
     fig = px.histogram(
         rna.var,
@@ -266,17 +271,9 @@ def _calc_sc_metrics(sdata, figure_path, annotation_path, annotation_key):
     fig.write_image(f'{figure_path}/histogram_log_n_cells_by_counts.pdf', scale=int(DPI/100))
 
 
-    n_cells = 10_000
-    if ( rna.n_obs < n_cells ):
-        n_cells = rna.n_obs 
-
-    bool_array = np.full(rna.n_obs, False)
-    bool_array[:n_cells] = True
-    np.random.shuffle(bool_array)
-
     fig = go.Figure()
 
-    check_rna = rna.obs[bool_array]
+    check_rna = rna.obs[scatter_sample]
 
     fig.add_trace(go.Scatter(
         x=check_rna["total_counts"],
