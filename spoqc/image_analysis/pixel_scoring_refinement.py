@@ -31,10 +31,11 @@ def start_pixel_mask_refinement(
     image_ddf = dd.read_parquet(
         f'{spoqc_tmp_folder}/mask_{prefix}_output_{suffix}',
         columns=[f"{suffix}_beliefs"],
-        engine="pyarrow"
+        engine="pyarrow",
+        index=False,
     )
     
-    beliefs_raw = image_ddf[f"{suffix}_beliefs"].compute().to_numpy()
+    beliefs_raw = image_ddf[f"{suffix}_beliefs"].to_dask_array().compute()
 
     # Start the refinement of the proability for the pixel score.
     beliefs, labels = hqr.markov_random_field_zarr_parallel.first_version_loopy_belief_propagation_parallel(
@@ -81,5 +82,8 @@ def start_pixel_mask_refinement(
         meta=partition((0, 0)), divisions=(*offsets[:-1], n_rows - 1),
     )
 
-    helperfuncs.ddf_to_parquet(image_ddf, f'mask_smoothed_{prefix}', spoqc_tmp_folder, [], suffix)
+    helperfuncs.ddf_to_parquet(
+        image_ddf, f'mask_smoothed_{prefix}', spoqc_tmp_folder, [], suffix,
+        include_index=False,
+    )
 
