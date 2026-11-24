@@ -372,7 +372,7 @@ def _calc_pixel_score_prior(
     image_ddf = image_ddf.assign(
         **{
             f'prob_{col}': scaled_ddf.iloc[:, 0],
-            f'mask_{col}': (scaled_ddf.iloc[:, 0] > 0.5).astype(int),
+            f'mask_{col}': (scaled_ddf.iloc[:, 0] > 0.5).astype("int8"),
         }
     )
     image_ddf = image_ddf.persist()
