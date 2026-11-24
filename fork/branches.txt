@@ -29,4 +29,4 @@ perf/hqcr-skip-overwritten-figures # perf | exact | not sent | Write static HQCR
 
 perf/doublet-slurm-workers       # perf | exact on Skin_A2 | not sent | Set ovrlpy workers from allocated Slurm task CPUs
 
-# perf/doublet-transcript-distance-window | exact on Skin_A2 and P45_POST | awaiting approval for integration
+perf/doublet-transcript-distance-window # perf | exact | not sent | Limit transcript distance checks to nearby rows
