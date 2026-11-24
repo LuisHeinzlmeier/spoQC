@@ -258,7 +258,7 @@ class CelltypeAnnotation:
             end=2.0,
             start=0.0
         )
-        sc.tl.leiden(rna, resolution=win_res, key_added='leiden', random_state=args.seed)
+        helperfuncs.leiden(rna, resolution=win_res, key_added='leiden', random_state=args.seed)
 
         # In case it is really bad data, I have to do something else.
         # Quite often leiden clustering finds then a resolution which is overfitting with too many subclusters.
@@ -274,7 +274,7 @@ class CelltypeAnnotation:
                 end=0.1,
                 start=0.000001
             )
-            sc.tl.leiden(rna, resolution=win_res, key_added='leiden', random_state=args.seed)
+            helperfuncs.leiden(rna, resolution=win_res, key_added='leiden', random_state=args.seed)
 
         # If that does not help then iut is assumed that all the data points are bad.
         if ( len(set(rna.obs['leiden'])) > 30 ):
