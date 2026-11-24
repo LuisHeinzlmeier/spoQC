@@ -31,8 +31,10 @@ def _calc_doublet_score(
         distance_thresh = 10,
 ):
 
-    transcript_coordinates_df = sdata.points[key_transcripts].compute()
-    transcript_coordinates_df = transcript_coordinates_df.rename(columns={'feature_name': 'gene'})
+    transcript_coordinates_df = sdata.points[key_transcripts][
+        ['x', 'y', 'z', 'feature_name']
+    ].compute()
+    transcript_coordinates_df.rename(columns={'feature_name': 'gene'}, inplace=True)
 
     # ovrlpy does a werid thing to overwrite the coordinates and set the origin to 0.0.
     # I bring the doublet coordinates into the original data points coord system.
@@ -232,9 +234,7 @@ def _calc_doublet_score(
         sdata['table'].obs['doublet_ddd'] = np.zeros(sdata['table'].n_obs)
 
 
-    # Have to call this again because overlpy corrects also the transcript coordinates
-    transcript_coordinates_df = sdata.points[key_transcripts].compute()
-
+    # Ovrlp adjusts its own Polars table. The original coordinates and index are still here.
     # Detect transcript that might belong to doublets
     transcript_doublet = np.array([False] * len(transcript_coordinates_df))
     transcript_wdoublet = np.array([0] * len(transcript_coordinates_df))
