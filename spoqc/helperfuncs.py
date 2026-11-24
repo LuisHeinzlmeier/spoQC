@@ -1,3 +1,7 @@
+import atexit
+from itertools import batched
+from tempfile import TemporaryDirectory
+
 from spoqc.reporting import plots_enabled, plots_only
 
 import numpy as np
@@ -126,16 +130,18 @@ def create_fraction_df(adata: AnnData, group: str, category: str) -> Dict[str, U
     return(d)    
 
 
-def read_data_as_dda(tmp_files, chunk_size):
+def read_data_as_dda(tmp_files, chunk_size, *, split_row_groups=False):
     # Preallocate a Dask Array with correct shape and chunks
     col_series = [
-        dd.read_parquet(file).iloc[:, 0].reset_index(drop=True)
+        dd.read_parquet(file, split_row_groups=True if split_row_groups else 'infer').iloc[:, 0].reset_index(drop=True)
         for file in tmp_files
     ]
 
     # Compute all per-file partition lengths together (in parallel) instead of
     # letting to_dask_array(lengths=True) block on each file one at a time.
-    lengths_per_col = dask.compute(*[s.map_partitions(len) for s in col_series])
+    length_tasks = [series.map_partitions(len) for series in col_series]
+    options = {'num_workers': 4} if split_row_groups else {}
+    lengths_per_col = dask.compute(*length_tasks, **options)
 
     array_columns = []
     for col_ddf, lengths in zip(col_series, lengths_per_col):
@@ -149,6 +155,41 @@ def read_data_as_dda(tmp_files, chunk_size):
     # da.to_zarr(dask_array, "dask_array.zarr", overwrite=True); dask_array = da.from_zarr("dask_array.zarr")
 
     return dask_array
+
+
+def compute_pixel_sample(array):
+    """Materialize the selected rows in their original partition order."""
+    blocks = array.to_delayed().ravel()
+    return np.concatenate([
+        block
+        for batch in batched(blocks, 16)
+        for block in dask.compute(*batch, num_workers=4)
+    ])
+
+
+def checkpoint_pixel_scores(frame, directory):
+    """Cache one Parquet file per partition for the current SpoQC process."""
+    checkpoint = TemporaryDirectory(prefix=".pixel-scores-", dir=directory)
+    paths = [
+        os.path.join(checkpoint.name, f"part.{i:08d}.parquet")
+        for i in range(frame.npartitions)
+    ]
+    try:
+        writes = (
+            dask.delayed(pd.DataFrame.to_parquet)(part, path, index=True)
+            for part, path in zip(frame.to_delayed(), paths, strict=True)
+        )
+        for batch in batched(writes, 16):
+            dask.compute(*batch, num_workers=4)
+        cached = dd.from_map(
+            pd.read_parquet, paths, meta=frame._meta, divisions=frame.divisions,
+        )
+    except BaseException:
+        checkpoint.cleanup()
+        raise
+    # Later prior calculations still use the returned lazy frame.
+    atexit.register(checkpoint.cleanup)
+    return cached
 
 
 def read_data_as_ddf(tmp_file, chunk_size):

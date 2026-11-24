@@ -32,7 +32,7 @@ def combine_priors_hqpr(enterprise):
     enterprise.hqpr_priorset.prior_ddf = enterprise.hqpr_priorset.prior_ddf.assign(**{
         belief_name: row_means_series,
         mask_name: (row_means_series > 0.5).astype("int8"),
-    }).persist()
+    })
 
     if plots_enabled():
         helperfuncs.plot_pixels(
@@ -74,7 +74,7 @@ def combine_priors_hqtr(enterprise):
     enterprise.hqtr_priorset.prior_ddf = enterprise.hqtr_priorset.prior_ddf.assign(**{
         belief_name: row_means_series,
         mask_name: (row_means_series > 0.5).astype("int8"),
-    }).persist()
+    })
 
     if plots_enabled():
         helperfuncs.plot_pixels(

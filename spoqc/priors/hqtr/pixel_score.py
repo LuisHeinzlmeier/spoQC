@@ -20,7 +20,7 @@ from ... import core
 
 def _dask_summify(spoqc_tmp_folder, suffix, metrices, chunk_size):
     tmp_files = [f'{spoqc_tmp_folder}/{metric}_output_{suffix}.parquet' for metric in metrices]
-    ddf = helperfuncs.read_data_as_dda(tmp_files, chunk_size)
+    ddf = helperfuncs.read_data_as_dda(tmp_files, chunk_size, split_row_groups=True)
     structure_scores = ddf.sum(axis=1)
     return structure_scores
 
@@ -73,14 +73,14 @@ def _calc_pixel_score(
     elif ( modality == 'hqtr' ):
         # Intensities already flipped
         td_file = f'{spoqc_tmp_folder_metrices}/transcript_density_output_hqtr.parquet'
-        intensity = helperfuncs.read_data_as_dda([td_file], chunk_size)[:, 0]
+        intensity = helperfuncs.read_data_as_dda([td_file], chunk_size, split_row_groups=True)[:, 0]
         image_ddf = image_ddf.assign(intensity=intensity)
     else:
         sys.exit(f'[ERROR] Modality {modality} does not exist')
 
-    # Materialize s_score/as_score/intensity once so the repeated .compute()
-    # calls below don't each re-walk the whole graph from scratch.
-    image_ddf = image_ddf.persist()
+    image_ddf = helperfuncs.checkpoint_pixel_scores(
+        image_ddf, os.path.dirname(spoqc_tmp_folder_metrices),
+    )
     timer.stop()
 
     # Background refined image (background_intensity was already estimated
@@ -221,7 +221,7 @@ def _dask_clustering_mini_batches(
 
     with dask.config.set(scheduler="threads", num_workers=threads):
         print("[NOTE] Read data")
-        dask_array = helperfuncs.read_data_as_dda(tmp_files, chunk_size)
+        dask_array = helperfuncs.read_data_as_dda(tmp_files, chunk_size, split_row_groups=True)
         n_rows = dask_array.shape[0]
 
         print("[NOTE] Clustering (fit on subsample, predict on full array in parallel)")
@@ -235,7 +235,7 @@ def _dask_clustering_mini_batches(
         # parallel (map_blocks, no shared state) avoids that entirely.
         frac = min(1.0, kmeans_sample_size / n_rows)
         sample_mask = da.random.default_rng(seed).random(n_rows, chunks=(chunk_size,)) < frac
-        sample_np = dask_array[sample_mask].compute()
+        sample_np = helperfuncs.compute_pixel_sample(dask_array[sample_mask])
 
         est = MiniBatchKMeans(
             n_clusters=n_clusters,
@@ -303,7 +303,8 @@ def _calc_pixel_score_prior(
             sys.exit(f"[ERROR] File {metric_file} is missing")
 
     print('[NOTE] Agglomerate pixel metrices and cluster')
-    num_values_image = len(sdata[image_type][resolution].image.values[0].flatten())
+    height, width = sdata[image_type][resolution].image.shape[-2:]
+    num_values_image = height * width
     empty_clusters = da.zeros(num_values_image, chunks=chunk_size)
     image_ddf = dd.from_dask_array(empty_clusters, columns=['cluster'])
     timer.start()
@@ -317,7 +318,6 @@ def _calc_pixel_score_prior(
         kmeans_sample_size
     ))
     print("[NOTE] Time for the whole clustering process:")
-    image_ddf = image_ddf.persist()
     timer.stop()
 
     #####################
@@ -376,7 +376,6 @@ def _calc_pixel_score_prior(
             f'mask_{col}': (scaled_ddf.iloc[:, 0] > 0.5).astype("int8"),
         }
     )
-    image_ddf = image_ddf.persist()
     timer.stop()
 
     if plots_enabled():
